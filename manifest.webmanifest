@@ -1,0 +1,30 @@
+{
+  "name": "Lieblingswein",
+  "short_name": "Lieblingswein",
+  "description": "Finde deinen Lieblingswein",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#E2CCA3",
+  "theme_color": "#8A2435",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
