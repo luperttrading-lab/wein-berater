@@ -1,6 +1,6 @@
 {
-  "name": "Lieblingswein",
-  "short_name": "Lieblingswein",
+  "name": "Wein-Berater",
+  "short_name": "Wein-Berater",
   "description": "Finde deinen Lieblingswein",
   "start_url": ".",
   "scope": ".",
