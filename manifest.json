@@ -1,0 +1,20 @@
+{
+  "name": "Wein-Berater",
+  "short_name": "Wein-Berater",
+  "description": "Dein persönlicher Weinberater – nach Geschmack finden & nachschlagen",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#E2CCA3",
+  "theme_color": "#8A2435",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "aromen/Kirsche.png",
+      "sizes": "300x300",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
