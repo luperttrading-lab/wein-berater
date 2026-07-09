@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>Wein-Berater v5.53 — Finde deinen Lieblingswein</title>
+<title>Wein-Berater v5.54 — Finde deinen Lieblingswein</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,6 +35,8 @@ html[data-skin="praeg"]{
 
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%;background:var(--bg);color-scheme:light;overscroll-behavior:none;overflow-x:hidden;}
+input[type="search"],input[type="text"],input:not([type]),textarea,select{font-size:16px;}
+
 body{
   font-family:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
   background:var(--bg); color:var(--text); line-height:1.5; min-height:100vh; min-height:100dvh;
@@ -72,7 +74,7 @@ body::before{
 .wseg-btn:active{transform:scale(.98);}
 .glossar-search{position:relative;margin-bottom:14px;}
 .glossar-search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted-2);pointer-events:none;}
-.glossar-search input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:11px 14px 11px 38px;border:1px solid var(--line-strong);border-radius:13px;background:var(--panel);color:var(--text);}
+.glossar-search input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:11px 14px 11px 38px;border:1px solid var(--line-strong);border-radius:13px;background:var(--panel);color:var(--text);}
 .glossar-search input::placeholder{color:var(--muted-2);}
 .glossar-search input:focus{outline:none;border-color:var(--accent);}
 .glossar-list{display:flex;flex-direction:column;}
@@ -779,7 +781,7 @@ body::before{
         <span class="card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </button>
     </div>
-    <div class="appver">Wein-Berater · v5.53</div>
+    <div class="appver">Wein-Berater · v5.54</div>
   </section>
 
   <section class="screen" id="screen-nachschlagen">

@@ -1,9 +1,9 @@
-/* Wein-Berater Service Worker — wein-berater-v5_53 */
-const CACHE = "wein-berater-v5_53";
+/* Wein-Berater Service Worker — wein-berater-v5_54 */
+const CACHE = "wein-berater-v5_54";
 const ASSETS = [
   "./",
   "./index.html",
-  "./wein-berater-v5_53.html",
+  "./wein-berater-v5_54.html",
   "./manifest.json",
   "aromen/Akazie.png",
   "aromen/Ananas.png",
