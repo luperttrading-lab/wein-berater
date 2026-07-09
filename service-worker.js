@@ -1,9 +1,9 @@
-/* Wein-Berater Service Worker — wein-berater-v5_50 */
-const CACHE = "wein-berater-v5_50";
+/* Wein-Berater Service Worker — wein-berater-v5_51 */
+const CACHE = "wein-berater-v5_51";
 const ASSETS = [
   "./",
   "./index.html",
-  "./wein-berater-v5_50.html",
+  "./wein-berater-v5_51.html",
   "./manifest.json",
   "aromen/Akazie.png",
   "aromen/Ananas.png",
@@ -13,13 +13,13 @@ const ASSETS = [
   "aromen/Asche.png",
   "aromen/Banane.png",
   "aromen/Bergamotte.png",
-  "aromen/Bergkräuter.png",
+  "aromen/Bergkraeuter.png",
   "aromen/Bienenwachs.png",
   "aromen/Birne.png",
   "aromen/Bittermandel.png",
   "aromen/Bitterschokolade.png",
   "aromen/Bleistiftmine.png",
-  "aromen/Blüten.png",
+  "aromen/Blueten.png",
   "aromen/Bonbon.png",
   "aromen/Brioche.png",
   "aromen/Brombeere.png",
@@ -33,11 +33,11 @@ const ASSETS = [
   "aromen/Feige.png",
   "aromen/Fenchel.png",
   "aromen/Feuerstein.png",
-  "aromen/Garrigue-Kräuter.png",
+  "aromen/Garrigue-Kraeuter.png",
   "aromen/Garrigue.png",
-  "aromen/Geißblatt.png",
-  "aromen/Gewürz.png",
-  "aromen/Gewürze.png",
+  "aromen/Geissblatt.png",
+  "aromen/Gewuerz.png",
+  "aromen/Gewuerze.png",
   "aromen/Granatapfel.png",
   "aromen/Grapefruit.png",
   "aromen/Graphit.png",
@@ -48,23 +48,23 @@ const ASSETS = [
   "aromen/Himbeerbonbon.png",
   "aromen/Himbeere.png",
   "aromen/Holunder.png",
-  "aromen/Holunderblüte.png",
+  "aromen/Holunderbluete.png",
   "aromen/Honig.png",
   "aromen/Honigmelone.png",
-  "aromen/Hülsenfrüchte.png",
+  "aromen/Huelsenfruechte.png",
   "aromen/Ingwer.png",
   "aromen/Jod.png",
   "aromen/Johannisbeere.png",
   "aromen/Kakao.png",
   "aromen/Kamille.png",
   "aromen/Kirsche.png",
-  "aromen/Kräuter.png",
-  "aromen/Kräuter_der_Provence.png",
-  "aromen/Kräutertee.png",
+  "aromen/Kraeuter.png",
+  "aromen/Kraeuter_der_Provence.png",
+  "aromen/Kraeutertee.png",
   "aromen/Lakritz.png",
   "aromen/Lanolin.png",
   "aromen/Lavendel.png",
-  "aromen/Lebkuchengewürz.png",
+  "aromen/Lebkuchengewuerz.png",
   "aromen/Leder.png",
   "aromen/Limette.png",
   "aromen/Litschi.png",
@@ -78,7 +78,7 @@ const ASSETS = [
   "aromen/Muskat.png",
   "aromen/Nelke.png",
   "aromen/Nuss.png",
-  "aromen/Orangenblüte.png",
+  "aromen/Orangenbluete.png",
   "aromen/Orangenmarmelade.png",
   "aromen/Orangenzeste.png",
   "aromen/Paprika.png",
@@ -90,8 +90,8 @@ const ASSETS = [
   "aromen/Rhabarber.png",
   "aromen/Ribisel__Johannisbeere_.png",
   "aromen/Rose.png",
-  "aromen/Rosenblüte.png",
-  "aromen/Rosenblüten.png",
+  "aromen/Rosenbluete.png",
+  "aromen/Rosenblueten.png",
   "aromen/Rosine.png",
   "aromen/Rosmarin.png",
   "aromen/Salz.png",
@@ -106,7 +106,7 @@ const ASSETS = [
   "aromen/Teer.png",
   "aromen/Toast.png",
   "aromen/Tomatenblatt.png",
-  "aromen/Trüffel.png",
+  "aromen/Trueffel.png",
   "aromen/Vanille.png",
   "aromen/Veilchen.png",
   "aromen/Waldboden.png",
@@ -125,45 +125,28 @@ const ASSETS = [
   "aromen/erdige_Noten.png",
   "aromen/feuchter_Stein.png",
   "aromen/frisch_geschnittenes_Gras.png",
-  "aromen/frische_Kräuter.png",
+  "aromen/frische_Kraeuter.png",
   "aromen/frische_Traube.png",
   "aromen/gelber_Apfel.png",
-  "aromen/getrocknete_Kräuter.png",
-  "aromen/grüne_Birne.png",
-  "aromen/grüne_Kräuter.png",
-  "aromen/grüne_Mandel.png",
-  "aromen/grüne_Paprika.png",
-  "aromen/grüner_Apfel.png",
+  "aromen/getrocknete_Kraeuter.png",
+  "aromen/gruene_Birne.png",
+  "aromen/gruene_Kraeuter.png",
+  "aromen/gruene_Mandel.png",
+  "aromen/gruene_Paprika.png",
+  "aromen/gruener_Apfel.png",
   "aromen/kandierte_Frucht.png",
-  "aromen/mediterrane_Kräuter.png",
+  "aromen/mediterrane_Kraeuter.png",
   "aromen/nasse_Wolle.png",
   "aromen/reifer_Apfel.png",
   "aromen/rote_Beeren.png",
   "aromen/rote_Johannisbeere.png",
   "aromen/rote_Kirsche.png",
   "aromen/schwarzer_Pfeffer.png",
-  "aromen/weiße_Blüten.png",
-  "aromen/weiße_Kirsche.png",
-  "aromen/weißer_Pfeffer.png",
-  "aromen/weißer_Pfirsich.png"
+  "aromen/weisse_Blueten.png",
+  "aromen/weisse_Kirsche.png",
+  "aromen/weisser_Pfeffer.png",
+  "aromen/weisser_Pfirsich.png"
 ];
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
-});
-self.addEventListener("activate", (e) => {
-  e.waitUntil(caches.keys().then((keys) =>
-    Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-  ).then(() => self.clients.claim()));
-});
-self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
-  e.respondWith(caches.match(e.request).then((hit) => {
-    const net = fetch(e.request).then((res) => {
-      if (res && res.status === 200 && res.type === "basic") {
-        const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy));
-      }
-      return res;
-    }).catch(() => hit);
-    return hit || net;
-  }));
-});
+self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
+self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener("fetch", (e) => { if (e.request.method !== "GET") return; e.respondWith(caches.match(e.request).then((hit) => { const net = fetch(e.request).then((res) => { if (res && res.status === 200 && res.type === "basic") { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); } return res; }).catch(() => hit); return hit || net; })); });
