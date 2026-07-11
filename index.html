@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>Wein-Berater v5.67 — Finde deinen Lieblingswein</title>
+<title>Wein-Berater v5.68 — Finde deinen Lieblingswein</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -420,8 +420,8 @@ body::before{
 .runner-chev{width:18px;height:18px;color:var(--muted-2);flex-shrink:0;transition:transform .3s;}
 .runner.open .runner-chev{transform:rotate(180deg);}
 .runner-body{display:none;padding:8px;background:transparent;border-top:1px solid var(--line);}
-.runner.browse-item{background:transparent;border:none;box-shadow:none;margin-bottom:0;overflow:visible;}
-.runner.browse-item>.runner-body{padding:0;background:transparent;border-top:none;}
+#screen-herkunft .runner.browse-item{background:transparent;border:none;box-shadow:none;margin-bottom:0;overflow:visible;}
+#screen-herkunft .runner.browse-item>.runner-body{padding:0;background:transparent;border-top:none;}
 .sim-block{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);}
 .sim-head{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 10px;}
 .sim-chips{display:flex;flex-wrap:wrap;gap:8px;}
@@ -786,7 +786,7 @@ body::before{
         <span class="card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </button>
     </div>
-    <div class="appver">Wein-Berater · v5.67</div>
+    <div class="appver">Wein-Berater · v5.68</div>
   </section>
 
   <section class="screen" id="screen-nachschlagen">
