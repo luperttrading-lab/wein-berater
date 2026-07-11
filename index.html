@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>Wein-Berater v5.66 — Finde deinen Lieblingswein</title>
+<title>Wein-Berater v5.67 — Finde deinen Lieblingswein</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -665,6 +665,9 @@ body::before{
 .re-whead{display:flex;align-items:center;gap:8px;}
 .re-wdot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:var(--c,#8A2435);}
 .re-wname{font-size:15px;font-weight:700;color:var(--text);}
+.re-wlink{cursor:pointer;color:var(--accent);border-bottom:1px dotted var(--accent);-webkit-tap-highlight-color:transparent;}
+.re-seg.essen-jumped{animation:essenPuls 1.6s ease-out 1;}
+@keyframes essenPuls{0%,55%{background:rgba(138,36,53,.10);}100%{background:transparent;}}
 .re-wtxt{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.42;}
 .re-veg{width:15px;height:15px;fill:#5d8a3f;vertical-align:-2px;margin-left:7px;}
 .re-cat.vhide,.re-grp.vhide,.re-dish.vhide{display:none;}
@@ -783,7 +786,7 @@ body::before{
         <span class="card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </button>
     </div>
-    <div class="appver">Wein-Berater · v5.66</div>
+    <div class="appver">Wein-Berater · v5.67</div>
   </section>
 
   <section class="screen" id="screen-nachschlagen">
@@ -3449,7 +3452,7 @@ function renderEssen(){
       d.w.forEach((w,wi)=>{
         h+='<div class="re-seg" style="--c:'+SPEISEN_CM[w.c]+'">';
         if(wi===0)h+='<div class="re-gname">'+E(d.g)+(d.veg?VEG:"")+'</div>';
-        h+='<div class="re-whead"><span class="re-wdot"></span><span class="re-wname">'+E(w.w)+'</span></div>';
+        h+='<div class="re-whead"><span class="re-wdot"></span><span class="re-wname re-wlink" data-grape="'+E(w.w)+'" role="button" tabindex="0">'+E(w.w)+'</span></div>';
         h+='<div class="re-wtxt">'+E(w.t)+'</div></div>';
       });
       h+='</div>';
@@ -3460,6 +3463,14 @@ function renderEssen(){
 }
 function wireEssen(){
   const list=document.getElementById("reg-list");
+  if(list && !list.dataset.wlink){ list.dataset.wlink="1";
+    list.addEventListener("click", function(ev){
+      const a=ev.target.closest(".re-wlink"); if(!a) return;
+      ev.stopPropagation();
+      state.essenAnker = a.closest(".re-seg") || a;
+      gotoWein(a.dataset.grape, {kind:"essen"});
+    });
+  }
   const chips=[...document.querySelectorAll(".re-chip")];
   const vbtn=document.getElementById("re-vfilter");
   let vegOn=false;
@@ -3663,6 +3674,17 @@ function merkeErgebnisAnker(el){
   const card = el && el.closest ? el.closest('.runner') : null;   // angeklickte Empfehlungskarte
   state.resultsAnchorY = card ? (card.getBoundingClientRect().top + window.scrollY) : window.scrollY;
 }
+function scrolleZuEssenAnker(){
+  const el = state.essenAnker; if(!el) return;
+  const cat = el.closest(".re-cat"); if(cat) cat.classList.add("open");
+  requestAnimationFrame(function(){
+    const r = el.getBoundingClientRect();
+    const y = (window.pageYOffset||document.documentElement.scrollTop||0) + r.top;
+    const off = Math.max(70, (window.innerHeight - r.height)/2);
+    window.scrollTo({top: Math.max(0, y - off), behavior:"auto"});
+    el.classList.remove("essen-jumped"); void el.offsetWidth; el.classList.add("essen-jumped");
+  });
+}
 function scrolleZuErgebnisAnker(){
   requestAnimationFrame(()=>{
     const head = $("results-body") ? $("results-body").querySelector('.results-head') : null;
@@ -3687,6 +3709,7 @@ function weinZurueck(){
   const t = state.weinStack.pop();
   if(t && t.kind==='results'){ showScreen("screen-results", true); scrolleZuErgebnisAnker(); return; }
   if(t && t.kind==='wein'){ const f=findGrape(t.name); if(f){ state.type=f.type; document.body.dataset.type=state.type; renderWein(f.g); showScreen("screen-wein"); return; } }
+  if(t && t.kind==='essen'){ showScreen("screen-essen", true); scrolleZuEssenAnker(); return; }
   if(t && t.kind==='nachschlagen'){ showScreen("screen-nachschlagen"); return; }
   openBrowse(state.type);
 }
