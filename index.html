@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>Wein-Berater v5.54 — Finde deinen Lieblingswein</title>
+<title>Wein-Berater v5.66 — Finde deinen Lieblingswein</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,8 +14,8 @@
 <meta name="apple-mobile-web-app-title" content="Wein-Berater">
 <style>
 :root{
-  --bg:#E2CCA3; --bg-2:#D9C08F; --panel:#F4E7CE; --panel-2:#ECDCBA;
-  --line:rgba(90,32,40,.18); --line-strong:rgba(90,32,40,.34);
+  --bg:#EADAB8; --bg-2:#E0CDA0; --panel:#FBF3E2; --panel-2:#F2E6CE;
+  --line:rgba(90,32,40,.16); --line-strong:rgba(90,32,40,.34);
   --text:#3B1B23; --muted:#6E454C; --muted-2:#7E575E;
   --accent:#8A2435; --accent-2:#8A2435; --fill:#8A2435; --fill-ink:#fff; --accent-glow:rgba(138,36,53,.14);
   --petrol:#2E6B4A; --petrol-soft:rgba(46,107,74,.13);
@@ -23,19 +23,14 @@
   --shadow-sm:inset 0 1px 0 rgba(255,255,255,.55),0 1px 2px rgba(59,27,35,.05),0 8px 20px -12px rgba(59,27,35,.16);
   --radius:18px; --radius-sm:12px; --maxw:760px;
 }
-html[data-skin="praeg"]{
-  --bg:#F1E3CA; --bg-2:#E9D7B8; --panel:#E7D3B0; --panel-2:#E2CCA6;
-  --line:rgba(90,32,40,.20);
-  --shadow:inset 0 2px 5px rgba(59,27,35,.13),inset 0 -1px 0 rgba(255,255,255,.55);
-  --shadow-sm:inset 0 1.5px 4px rgba(59,27,35,.11),inset 0 -1px 0 rgba(255,255,255,.5);
-}
+
 [data-type="rot"]{ --accent:#8A2435; --accent-2:#8A2435; --fill:#8A2435; --fill-ink:#fff; --accent-glow:rgba(138,36,53,.15); }
 [data-type="weiss"]{ --accent:#8F6A0F; --accent-2:#8F6A0F; --fill:#E2B33C; --fill-ink:#4A3606; --accent-glow:rgba(226,179,60,.22); }
 [data-type="rose"]{ --accent:#A8404F; --accent-2:#A8404F; --fill:#E2848E; --fill-ink:#561A22; --accent-glow:rgba(226,132,142,.25); }
 
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%;background:var(--bg);color-scheme:light;overscroll-behavior:none;overflow-x:hidden;}
-input[type="search"],input[type="text"],input:not([type]),textarea,select{font-size:16px;}
+input[type="search"],input[type="text"],input:not([type]),textarea,select{font-size:16px;caret-color:#000;}
 
 body{
   font-family:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
@@ -69,6 +64,13 @@ body::before{
 .ggroup{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted-2);font-weight:600;margin:22px 0 2px;}
 .ggroup:first-child{margin-top:6px;}
 .wseg{display:flex;gap:4px;padding:4px;margin:2px 0 18px;background:var(--panel-2);border:1px solid var(--line);border-radius:13px;}
+.wseg[hidden]{display:none;}
+.lookup-hint{font-size:11.5px;color:var(--muted-2);font-style:italic;margin:2px 2px 12px;line-height:1.45;}
+.gloss-box{background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow-sm);padding:2px 13px;margin:0 0 6px;overflow:hidden;overflow:clip;}
+.gloss-box>:last-child{border-bottom:none;}
+.gloss-back{position:fixed;left:14px;bottom:18px;z-index:60;display:flex;align-items:center;gap:8px;background:var(--accent);color:#fff;border:none;border-radius:999px;padding:12px 17px;font-weight:700;font-size:14px;box-shadow:0 10px 22px -8px rgba(59,27,35,.5);cursor:pointer;}
+.gloss-back[hidden]{display:none;}
+.gloss-back svg{width:15px;height:15px;flex:none;}
 .wseg-btn{flex:1;font:inherit;font-size:14px;font-weight:600;padding:9px 8px;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer;transition:background .2s,color .2s;}
 .wseg-btn.active{background:var(--panel);color:var(--accent);box-shadow:var(--shadow-sm);}
 .wseg-btn:active{transform:scale(.98);}
@@ -94,10 +96,10 @@ body::before{
 .gloss-item.open .gloss-chev{transform:rotate(90deg);color:var(--accent);}
 .gloss-def{max-height:0;overflow:hidden;transition:max-height .3s ease;}
 .gloss-def p{font-size:13.5px;line-height:1.5;color:var(--muted);margin:0;padding:0 2px 13px;}
-.gloss-ref{color:var(--accent);cursor:pointer;border-bottom:1px dotted var(--accent);}
+.gloss-ref{color:var(--accent);cursor:pointer;border-bottom:1px dotted var(--accent);font-weight:600;}
 .gloss-flash{animation:glossFlash 1.2s ease;}
 @keyframes glossFlash{from{background:rgba(170,140,80,.20);}to{background:transparent;}}
-.gloss-item.open{background:var(--panel);margin:0 -18px;padding:0 18px;}
+.gloss-item.open{background:var(--panel-2);margin:0 -13px;padding:0 13px;box-shadow:inset 3px 0 0 var(--accent);}
 .glossar-empty{font-size:13.5px;color:var(--muted-2);text-align:center;padding:24px 0;}
 .rn-syn{display:block;font-size:11.5px;color:var(--accent);font-weight:600;margin-top:2px;}
 .browse-empty{font-size:13.5px;color:var(--muted-2);text-align:center;padding:24px 0;}
@@ -781,7 +783,7 @@ body::before{
         <span class="card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </button>
     </div>
-    <div class="appver">Wein-Berater · v5.54</div>
+    <div class="appver">Wein-Berater · v5.66</div>
   </section>
 
   <section class="screen" id="screen-nachschlagen">
@@ -789,11 +791,13 @@ body::before{
     <div class="choose-label">Nachschlagen</div>
     <div class="glossar-search start-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="start-suche" type="search" inputmode="search" autocomplete="off" placeholder="Rebsorte, Herkunft oder Fachbegriff …" aria-label="Rebsorte, Herkunft oder Fachbegriff suchen"><button id="start-clear" type="button" class="start-clear" aria-label="Suche löschen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="lk-sugg-box" id="lookup-sugg" hidden></div>
+    <p class="lookup-hint" id="lookup-hint">Suche nach Rebsorte, Zweitname, Anbaugebiet oder Fachbegriff — darunter alle Fachbegriffe von A–Z.</p>
     <div class="wseg lookup-mode" id="lookup-mode" role="tablist" hidden>
       <button class="wseg-btn active" id="lkmode-cards" type="button">Karten</button>
       <button class="wseg-btn" id="lkmode-compact" type="button">Kompakt</button>
     </div>
     <div class="start-treffer" id="start-treffer"></div>
+    <button class="gloss-back" id="gloss-back" type="button" hidden onclick="glossBackGo()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg><span id="gloss-back-label">Zurück</span></button>
     <div class="lookup-browse" id="lookup-browse">
       <div class="lookup-cat">Fachbegriffe A–Z</div>
       <div id="glossar-list" class="glossar-list"></div>
@@ -1159,7 +1163,7 @@ const BSP_INFO = {
   "Œil de Perdrix Neuchâtel AOC": "Das Schweizer Original vom Neuenburgersee: reinsortiger Pinot Noir in zartem Blasskupfer — Rebhuhnauge heißt die poetische Farbangabe."
 };
 
-const GLOSSAR = [{"t":"Abgang","d":"Wie lange der Geschmack nachklingt, nachdem man geschluckt hat. Ein langer Abgang gilt als Zeichen von Klasse."},{"t":"Alkohol","d":"Sorgt für Wärme und Fülle im Wein; er entsteht bei der Gärung aus dem Traubenzucker. Zu viel tritt brennend hervor."},{"t":"Alte & Neue Welt","d":"Alte Welt = die klassischen europäischen Weinländer, wo meist die Herkunft auf dem Etikett steht. Neue Welt = USA, Australien, Chile, Südafrika u. a., wo die Rebsorte vorn steht."},{"t":"Amabile","d":"Italienisch für halbsüß — spürbare, aber nicht satte Restsüße (zwischen secco und dolce)."},{"t":"Amarone","d":"Kräftiger, trockener Rotwein aus dem Valpolicella, aus angetrockneten Trauben (Appassimento): hoher Alkohol, dichte Dörrfrucht."},{"t":"AOC / AOP","d":"Frankreichs höchste Herkunftsstufe: AOC (Appellation d’Origine Contrôlée), EU-weit auch AOP."},{"t":"Appassimento","d":"Italienische Methode: Trauben werden nach der Lese wochenlang angetrocknet, um Zucker und Aromen zu konzentrieren — Basis von Amarone und Recioto."},{"t":"Appellation","d":"Ein gesetzlich abgegrenztes Herkunftsgebiet mit Regeln zu Rebsorten, Ertrag und Ausbau — etwa Barolo, Chianti oder Rioja."},{"t":"Aromatik","d":"Wie laut und parfümiert ein Wein duftet, unabhängig wonach. Ein Muskateller ist hocharomatisch, ein neutraler Wein hält sich zurück."},{"t":"Ausbruch","d":"Österreichische Prädikatsstufe zwischen Beerenauslese und Trockenbeerenauslese, berühmt aus Rust am Neusiedlersee — edelsüß aus edelfaulen Trauben."},{"t":"Auslese","d":"Prädikat aus vollreifen, ausgesuchten Trauben — dicht und oft restsüß."},{"t":"Badisch Rotgold","d":"Badische Spezialität: roséfarbener Wein aus gemeinsam gekeltertem Grau- und Spätburgunder (mindestens QbA)."},{"t":"Barrique","d":"Ein kleines Eichenfass von rund 225 Litern. Beim Ausbau gibt das Holz Aroma und Struktur ab — typisch Vanille, Toast, Kokos und Gewürz, je stärker das Fass innen geröstet wurde. Gut dosiert gibt das Tiefe, zu viel überdeckt die Frucht."},{"t":"Beerenauslese","d":"Edelsüßes Prädikat (kurz BA) aus einzeln verlesenen, überreifen oder edelfaulen Beeren; selten und langlebig."},{"t":"Bio","d":"Zertifizierter Anbau ohne synthetische Pestizide und Dünger. Beschreibt die Arbeitsweise, nicht zwingend den Geschmack."},{"t":"Biodynamisch","d":"Bio plus ein geschlossenes Hofkonzept nach Rudolf Steiner (etwa Demeter), mit eigenen Präparaten und Arbeit nach dem Mondkalender."},{"t":"Böckser","d":"Geruch nach faulen Eiern oder Streichholz; verfliegt oft beim Schwenken oder Karaffieren."},{"t":"Bordeauxglas","d":"Ein hohes, etwas schlankeres Glas für strukturierte, tanninbetonte Rote wie Cabernet oder Syrah."},{"t":"Burgunderglas","d":"Ein sehr bauchiges Glas, das die feinen Aromen filigraner Roter wie Spätburgunder oder Nebbiolo wie in einer Schale fängt."},{"t":"Cerasuolo","d":"Doppeldeutig: „Cerasuolo d’Abruzzo“ ist ein kirschfarbener Rosé aus Montepulciano — „Cerasuolo di Vittoria“ dagegen ein roter DOCG aus Sizilien."},{"t":"Chiaretto","d":"Italienischer Rosé vom Gardasee (Bardolino, Valtènesi): blass und floral, oft nach Veilchen."},{"t":"Clairet","d":"Bordeaux: ein besonders dunkler Rosé bzw. sehr heller Rotwein — kräftiger gefärbt als ein normaler Rosé."},{"t":"Classico","d":"Italien: aus der historischen Kernzone eines Gebiets (etwa Chianti Classico) — eine Herkunfts-, keine Reifeangabe."},{"t":"Crianza","d":"Spanien: mindestens zwei Jahre gereift, davon eines im Eichenfass."},{"t":"Cru","d":"Französisch für „Gewächs“ oder „Lage“; bezeichnet einen abgegrenzten Weinberg, oft innerhalb einer Qualitätshierarchie."},{"t":"Cuvée","d":"Ein Wein aus mehreren Rebsorten oder Partien, bewusst zusammengestellt — das Gegenteil von reinsortig. In der Champagne auch der Grundverschnitt."},{"t":"Dekantieren","d":"Den gereiften Wein vorsichtig und mit möglichst wenig Luft vom Depot trennen — Ziel ist Klarheit, nicht Belüftung. Danach trinkt man zügig."},{"t":"Depot","d":"Der Bodensatz, den gereifte Rotweine mit den Jahren bilden. Beim Dekantieren trennt man den klaren Wein davon."},{"t":"DO / DOCa","d":"Spaniens geschützte Herkunft: DO (Denominación de Origen) und das höhere DOCa/DOQ (nur Rioja und Priorat)."},{"t":"DOC / DOCG","d":"Italiens geschützte Herkunft: DOC (Denominazione di Origine Controllata) und das strenger geregelte, höhere DOCG („e Garantita“)."},{"t":"Edelfäule (Botrytis)","d":"Der Pilz Botrytis cinerea unter den richtigen Bedingungen: er durchlöchert die Beerenhaut, Wasser verdunstet, Zucker und Aromen konzentrieren sich — Basis edelsüßer Weine wie Beerenauslese und Trockenbeerenauslese."},{"t":"edelsüß","d":"Die höchste Süße-Klasse: konzentrierte Dessertweine aus überreifen oder edelfaulen Trauben, mit viel Restzucker und tragender Säure."},{"t":"Eiswein","d":"Aus am Stock gefrorenen Trauben gepresst, sodass das Wasser als Eis zurückbleibt — ein hochkonzentrierter, edelsüßer Wein."},{"t":"Essigstich","d":"Stechender Ton nach Nagellack oder Essig, durch beginnende Essigsäurebildung."},{"t":"Federspiel","d":"Mittlere Reifestufe der Wachau (Vinea Wachau): trockene Weißweine mittleren Alkohols — zwischen leichtem Steinfeder und kräftigem Smaragd."},{"t":"feinherb","d":"Marktbegriff ohne rechtliche Definition; umgangssprachlich meist etwas zwischen halbtrocken und lieblich."},{"t":"Frucht","d":"Art und Fülle der Fruchtaromen — von dunkler Beere und Pflaume über helle Kirsche bis zu exotischer Mango. Frucht ist nicht dasselbe wie Süße."},{"t":"fruchtsüß","d":"Marktbegriff ohne rechtliche Definition, oft auf feinen restsüßen Rieslingen — sagt nichts Genaues über die Zuckermenge."},{"t":"Gärung","d":"Die Umwandlung des Traubenzuckers in Alkohol und Kohlensäure durch Hefe — der Kern jeder Weinbereitung."},{"t":"Glasverschluss","d":"Ein dichter und optisch schöner Glasstopfen, aber teurer als Kork oder Schraube."},{"t":"Gran Reserva","d":"Spanien: mindestens fünf Jahre Reife und nur in herausragenden Jahrgängen erzeugt."},{"t":"Grand Cru","d":"Frankreich: die höchste Lagen-Einstufung, die besten Einzellagen eines Gebiets."},{"t":"Großes Gewächs (GG)","d":"Höchste Stufe für trockene Lagenweine im VDP — die deutsche Antwort auf den Grand Cru."},{"t":"halbtrocken","d":"Bis 18 g/l Restzucker: eine zarte Restsüße, die die Säure abrundet, ohne süß zu schmecken."},{"t":"Hefe","d":"Die Mikroorganismen, die bei der Gärung den Zucker in Alkohol und Kohlensäure umwandeln — ob spontan aus dem Weinberg oder als Reinzuchthefe zugesetzt."},{"t":"Jahrgang","d":"Das Erntejahr auf dem Etikett. Es zählt vor allem in Klimaregionen mit schwankendem Wetter und bei lagerfähigen Weinen; bei Alltagsweinen aus warmen Zonen ist es nebensächlich."},{"t":"Joven","d":"Spanien: jung abgefüllt, mit wenig oder keinem Holz."},{"t":"Kabinett","d":"Unterste Prädikatsstufe, aus normal reifen Trauben — meist leicht und frisch."},{"t":"Karaffieren","d":"Einen jungen, noch verschlossenen Wein kräftig in eine weite Karaffe gießen, damit er Sauerstoff aufnimmt — das weicht die Tannine und öffnet das Aroma. Merksatz: junger Wein will Luft, alter Wein will Ruhe."},{"t":"Korkschmecker","d":"Muffiger Ton nach nasser Pappe oder Keller — ein Fehler im Korken. Eine so betroffene Flasche darf man im Restaurant zurückgeben."},{"t":"Körper","d":"Das Gewicht des Weins am Gaumen, von leicht und schlank bis voll und füllig — der Vergleich: Magermilch gegen Sahne."},{"t":"Kretzer","d":"Südtiroler Bezeichnung für Rosé (Gegenstück zu „Rubin“ für Rotwein), oft aus Lagrein oder Vernatsch."},{"t":"Lage / Einzellage","d":"Ein abgegrenzter Weinberg mit eigenem Namen. Die Einzellage ist die kleinste Herkunftseinheit — Grundlage der Lagenklassifikation (Cru, Grand Cru, Großes Gewächs)."},{"t":"lieblich","d":"Über 18 bis 45 g/l Restzucker — deutlich und angenehm süß, klassisch bei feinen Rieslingen."},{"t":"Maischegärung","d":"Die Gärung des Mosts samt Beerenschalen und Kernen (der „Maische“). Bei Rotwein der Normalfall, weil sich aus den Schalen Farbe und Tannin lösen; Weißwein vergärt meist ohne Schalen."},{"t":"Malolaktische Gärung","d":"Der biologische Säureabbau (BSA): Milchsäurebakterien wandeln die harte Apfelsäure in mildere Milchsäure um. Macht den Wein weicher und cremiger — das Buttrige im Chardonnay — und ist bei fast allen Rotweinen Standard."},{"t":"Most","d":"Der frisch gepresste, noch ungegorene Traubensaft — der Ausgangsstoff jeder Weinbereitung, vor Beginn der Gärung."},{"t":"Naturkork","d":"Traditioneller Verschluss aus Korkrinde; lässt minimal Luft zu und ist reiffördernd — kann aber „korken“."},{"t":"Naturwein","d":"Kein geschützter Begriff; meint meist minimale Eingriffe im Keller, wenig oder keinen Schwefel und oft eine trübe Optik — ein Stil, der polarisiert."},{"t":"Œil de Perdrix","d":"Schweizer Rosé („Rebhuhnauge“), klassisch aus Pinot Noir — zart lachsfarben."},{"t":"Oxidation","d":"Flacher, sherryartiger Eindruck, die Frucht ist weg — Folge von zu viel Luftkontakt."},{"t":"Perlage","d":"Das feine Aufsteigen der Kohlensäure-Bläschen im Schaumwein; eine feine, anhaltende Perlage gilt als Qualitätsmerkmal."},{"t":"Perlwein","d":"Leicht moussierender Wein mit weniger Kohlensäuredruck als Schaumwein (unter 3 bar) — fein prickelnd statt schäumend."},{"t":"Phenole","d":"Sammelbegriff für die Gerb- und Farbstoffe aus Schalen, Kernen und Stielen; dazu zählen die Tannine und die roten Anthocyane. Sie geben Farbe, Struktur und Lagerfähigkeit."},{"t":"Prädikat","d":"Eine Stufe vor allem auf deutschen und österreichischen Flaschen, die die Reife der Trauben bei der Lese angibt — nicht direkt die Süße und nicht die Fasszeit. Die Stufen, aufsteigend: Kabinett, Spätlese, Auslese, Beerenauslese, Eiswein und Trockenbeerenauslese."},{"t":"Premier Cru","d":"Frankreich: eine hochrangige Einzellage unterhalb des Grand Cru — Qualitäts- und Herkunftsangabe, kein Alter."},{"t":"QbA","d":"Qualitätswein bestimmter Anbaugebiete: die deutsche Basisstufe unter den Prädikatsweinen; darf angereichert werden."},{"t":"Rebsorte","d":"Die Traubensorte, aus der ein Wein gemacht ist. Sie gibt den Grundton vor — Klima, Boden und Ausbau formen ihn aber mindestens genauso."},{"t":"reinsortig","d":"Aus einer einzigen Rebsorte erzeugt, das Gegenteil der Cuvée. Je nach Weinrecht sind kleine Anteile anderer Sorten erlaubt."},{"t":"Reinzuchthefe","d":"Im Labor ausgewählte, gezielt zugesetzte Hefe für eine kontrollierte Gärung — das Gegenstück zur spontanen Gärung mit der natürlichen Hefe aus dem Weinberg."},{"t":"Reserva","d":"Spanien: mindestens drei Jahre Reife (eines im Fass) — die klassische Stufe."},{"t":"Restzucker","d":"Der Zucker, der nach der Gärung im Wein verbleibt — er allein bestimmt die Geschmacksangabe von trocken bis süß, nicht das Aroma. Gemessen in Gramm pro Liter."},{"t":"Riserva","d":"Italien: eine längere Mindestreife als der Grundwein; wie lang genau, hängt von der Appellation ab."},{"t":"Rosado / Rosato","d":"Spanisch (Rosado) bzw. italienisch (Rosato) für Rosé."},{"t":"Säure","d":"Das Rückgrat des Weins: macht ihn frisch, lebendig und haltbar und lässt ihn zum Essen funktionieren. Zu wenig wirkt schlaff, zu viel scharf."},{"t":"Schaumwein","d":"Wein mit Kohlensäure, die für Perlage und Schaum sorgt — meist durch eine zweite Gärung (Sekt, Champagner, Cava). Über 3 bar Druck spricht man von Schaumwein, darunter von Perlwein."},{"t":"Schilcher","d":"Steirischer Rosé aus der Rebsorte Blauer Wildbacher: blass, sehr säurebetont und unverwechselbar herb."},{"t":"Schillerwein","d":"Württemberger Spezialität: Rosé aus rot und weiß gemeinsam gelesenen und gekelterten Trauben — nicht der Verschnitt fertiger Weine."},{"t":"Schraubverschluss","d":"Dichter Metallverschluss, ideal für frische Weine zum baldigen Trinken; schließt einen Korkschmecker aus und ist längst kein Billig-Signal mehr."},{"t":"sec","d":"Französisch für trocken. Bei Schaumwein aber Vorsicht: „sec“ ist dort schon leicht süßlich."},{"t":"Sekt","d":"Deutscher Qualitätsschaumwein mit mindestens 3,5 bar Kohlensäuredruck."},{"t":"Smaragd","d":"Höchste Reifestufe der Wachau (Vinea Wachau): trockene, vollreife und kräftige Weißweine aus den spätest gelesenen Trauben."},{"t":"Spätlese","d":"Prädikat aus später gelesenen, reiferen Trauben; mehr Substanz als Kabinett, trocken bis lieblich ausbaubar."},{"t":"Steinfeder","d":"Leichteste Reifestufe der Wachau (Vinea Wachau): zarte, trockene Weißweine bis 11,5 % vol — unterhalb von Federspiel und Smaragd."},{"t":"Strohwein / Schilfwein","d":"Österreichische Prädikatsstufe: süßer Wein aus Trauben, die nach der Lese auf Stroh oder Schilf getrocknet werden, um den Zucker zu konzentrieren."},{"t":"Sulfite","d":"Schwefel als Konservierungsmittel: schützt den Wein vor Oxidation und Keimen, ein Teil entsteht ohnehin bei der Gärung. Ab einem Schwellenwert ist der Hinweis Pflicht — der Kopfschmerz-Mythos hält der Prüfung kaum stand."},{"t":"Superiore","d":"Italien: etwas mehr Alkohol und Substanz als die Basis — keine Reifeangabe."},{"t":"süß","d":"Über 45 g/l Restzucker: satt und ausgeprägt süß, der Bereich der edelsüßen Dessertweine."},{"t":"Tannin","d":"Die Gerbstoffe aus Schale, Kernen und Holzfass, die das pelzige, zusammenziehende Mundgefühl erzeugen (wie stark gezogener schwarzer Tee). Tannin gibt vor allem Rotwein Struktur und macht ihn lagerfähig."},{"t":"Terroir","d":"Das Zusammenspiel aus Boden, Klima, Lage und Tradition, das einem Wein seinen ortstypischen Charakter gibt — der Grund, warum dieselbe Rebe an zwei Orten verschieden schmeckt."},{"t":"Tinto","d":"Spanisch und portugiesisch für „rot“ — schlicht ein Rotwein (etwa Tempranillo Tinto)."},{"t":"Tränen","d":"Die Schlieren, die nach dem Schwenken an der Glaswand herablaufen, auch „Kirchenfenster“. Sie zeigen Alkohol- und Zuckergehalt an — kein Qualitätsmaß, nur Physik."},{"t":"Trinktemperatur","d":"Die Serviertemperatur verändert den Wein stark: je kräftiger und gerbstoffreicher, desto wärmer; je leichter, frischer und süßer, desto kühler. Im Zweifel lieber etwas zu kühl einschenken und im Glas erwärmen lassen."},{"t":"trocken","d":"Bis 9 g/l Restzucker — der Zucker ist fast vollständig zu Alkohol vergoren, keine spürbare Süße. Klassisch trockene Weine bleiben meist unter 4 g/l."},{"t":"Trockenbeerenauslese","d":"Höchste deutsche Prädikatsstufe (kurz TBA), aus rosinenartig eingetrockneten edelfaulen Beeren — extrem süß, konzentriert und teuer."},{"t":"Vendange Tardive","d":"Französisch für „späte Lese“: die edle Spätlese-Kategorie des Elsass aus spät geernteten, hochreifen Trauben — konzentriert, meist restsüß."},{"t":"Vin Jaune","d":"Jura-Spezialität: oxidativ unter Florhefe („sous voile“) ausgebauter „gelber Wein“ aus Savagnin — nussig, langlebig, im 0,62-l-Clavelin."},{"t":"Weinstein","d":"Kleine farblose oder rötliche Kristalle am Korken oder Flaschenboden, die bei Kälte auskristallisieren. Völlig harmlos und geschmacksneutral — kein Glassplitter, kein Zucker, kein Fehler."},{"t":"Weißherbst","d":"Deutscher Rosé aus einer einzigen roten Rebsorte (mindestens QbA), die aufs Etikett darf — hell und fruchtbetont."},{"t":"Würze","d":"Pfeffer-, Kräuter- und Garrigue-Noten, vor allem im Rotwein. Ein Syrah zeigt deutlichen schwarzen Pfeffer, den ein Cabernet kaum berührt."}];
+const GLOSSAR = [{"t":"Abgang","d":"Wie lange der Geschmack nachklingt, nachdem man geschluckt hat. Ein langer Abgang gilt als Zeichen von Klasse."},{"t":"Alkohol","d":"Entsteht, wenn Hefe den Traubenzucker vergärt — als Faustregel liefern rund 17 Gramm Zucker pro Liter etwa 1 % Alkohol. Je reifer also die Trauben, desto kräftiger der Wein. Alkohol trägt Körper und Aromen, wirkt am Gaumen leicht süßlich und gibt die typische Wärme im Abgang. Gut eingebunden merkt man ihn kaum — tritt er brennend hervor, fehlt die Balance."},{"t":"Alte & Neue Welt","d":"Alte Welt = die klassischen europäischen Weinländer, wo meist die Herkunft auf dem Etikett steht. Neue Welt = USA, Australien, Chile, Südafrika u. a., wo die Rebsorte vorn steht."},{"t":"Amabile","d":"Italienisch für halbsüß — spürbare, aber nicht satte Restsüße (zwischen secco und dolce)."},{"t":"Amarone","d":"Kräftiger, trockener Rotwein aus dem Valpolicella, aus angetrockneten Trauben (Appassimento): hoher Alkohol, dichte Dörrfrucht."},{"t":"AOC / AOP","d":"Frankreichs höchste Herkunftsstufe: AOC (Appellation d’Origine Contrôlée), EU-weit auch AOP."},{"t":"Appassimento","d":"Italienische Methode: Trauben werden nach der Lese wochenlang angetrocknet, um Zucker und Aromen zu konzentrieren — Basis von Amarone und Recioto."},{"t":"Appellation","d":"Ein gesetzlich abgegrenztes Herkunftsgebiet mit Regeln zu Rebsorten, Ertrag und Ausbau — etwa Barolo, Chianti oder Rioja."},{"t":"Aromatik","d":"Wie laut und parfümiert ein Wein duftet, unabhängig wonach. Ein Muskateller ist hocharomatisch, ein neutraler Wein hält sich zurück."},{"t":"Ausbruch","d":"Österreichische Prädikatsstufe zwischen Beerenauslese und Trockenbeerenauslese, berühmt aus Rust am Neusiedlersee — edelsüß aus edelfaulen Trauben."},{"t":"Auslese","d":"Prädikat aus vollreifen, ausgesuchten Trauben — dicht und oft restsüß."},{"t":"Badisch Rotgold","d":"Badische Spezialität: roséfarbener Wein aus gemeinsam gekeltertem Grau- und Spätburgunder (mindestens QbA)."},{"t":"Barrique","d":"Ein kleines Eichenfass von rund 225 Litern. Beim Ausbau gibt das Holz Aroma und Struktur ab — typisch Vanille, Toast, Kokos und Gewürz, je stärker das Fass innen geröstet wurde. Gut dosiert gibt das Tiefe, zu viel überdeckt die Frucht."},{"t":"Beerenauslese","d":"Edelsüßes Prädikat (kurz BA) aus einzeln verlesenen, überreifen oder edelfaulen Beeren; selten und langlebig."},{"t":"Bio","d":"Zertifizierter Anbau ohne synthetische Pestizide und Dünger. Beschreibt die Arbeitsweise, nicht zwingend den Geschmack."},{"t":"Biodynamisch","d":"Bio plus ein geschlossenes Hofkonzept nach Rudolf Steiner (etwa Demeter), mit eigenen Präparaten und Arbeit nach dem Mondkalender."},{"t":"Böckser","d":"Geruch nach faulen Eiern oder Streichholz; verfliegt oft beim Schwenken oder Karaffieren."},{"t":"Bordeauxglas","d":"Ein hohes, etwas schlankeres Glas für strukturierte, tanninbetonte Rote wie Cabernet oder Syrah."},{"t":"Burgunderglas","d":"Ein sehr bauchiges Glas, das die feinen Aromen filigraner Roter wie Spätburgunder oder Nebbiolo wie in einer Schale fängt."},{"t":"Cerasuolo","d":"Doppeldeutig: „Cerasuolo d’Abruzzo“ ist ein kirschfarbener Rosé aus Montepulciano — „Cerasuolo di Vittoria“ dagegen ein roter DOCG aus Sizilien."},{"t":"Chiaretto","d":"Italienischer Rosé vom Gardasee (Bardolino, Valtènesi): blass und floral, oft nach Veilchen."},{"t":"Clairet","d":"Bordeaux: ein besonders dunkler Rosé bzw. sehr heller Rotwein — kräftiger gefärbt als ein normaler Rosé."},{"t":"Classico","d":"Italien: aus der historischen Kernzone eines Gebiets (etwa Chianti Classico) — eine Herkunfts-, keine Reifeangabe."},{"t":"Crianza","d":"Spanien: mindestens zwei Jahre gereift, davon eines im Eichenfass."},{"t":"Cru","d":"Französisch für „Gewächs“ oder „Lage“; bezeichnet einen abgegrenzten Weinberg, oft innerhalb einer Qualitätshierarchie."},{"t":"Cuvée","d":"Ein Wein aus mehreren Rebsorten oder Partien, bewusst zusammengestellt — das Gegenteil von reinsortig. In der Champagne auch der Grundverschnitt."},{"t":"Dekantieren","d":"Den gereiften Wein vorsichtig und mit möglichst wenig Luft vom Depot trennen — Ziel ist Klarheit, nicht Belüftung. Danach trinkt man zügig."},{"t":"Depot","d":"Der Bodensatz, den gereifte Rotweine mit den Jahren bilden. Beim Dekantieren trennt man den klaren Wein davon."},{"t":"DO / DOCa","d":"Spaniens geschützte Herkunft: DO (Denominación de Origen) und das höhere DOCa/DOQ (nur Rioja und Priorat)."},{"t":"DOC / DOCG","d":"Italiens geschützte Herkunft: DOC (Denominazione di Origine Controllata) und das strenger geregelte, höhere DOCG („e Garantita“)."},{"t":"Edelfäule (Botrytis)","d":"Der Pilz Botrytis cinerea unter den richtigen Bedingungen: er durchlöchert die Beerenhaut, Wasser verdunstet, Zucker und Aromen konzentrieren sich — Basis edelsüßer Weine wie Beerenauslese und Trockenbeerenauslese."},{"t":"edelsüß","d":"Die höchste Süße-Klasse: konzentrierte Dessertweine aus überreifen oder edelfaulen Trauben, mit viel Restzucker und tragender Säure."},{"t":"Eiswein","d":"Aus am Stock gefrorenen Trauben gepresst, sodass das Wasser als Eis zurückbleibt — ein hochkonzentrierter, edelsüßer Wein."},{"t":"Essigstich","d":"Stechender Ton nach Nagellack oder Essig, durch beginnende Essigsäurebildung."},{"t":"Federspiel","d":"Mittlere Reifestufe der Wachau (Vinea Wachau): trockene Weißweine mittleren Alkohols — zwischen leichtem Steinfeder und kräftigem Smaragd."},{"t":"feinherb","d":"Marktbegriff ohne rechtliche Definition; umgangssprachlich meist etwas zwischen halbtrocken und lieblich."},{"t":"Frucht","d":"Art und Fülle der Fruchtaromen — von dunkler Beere und Pflaume über helle Kirsche bis zu exotischer Mango. Frucht ist nicht dasselbe wie Süße."},{"t":"fruchtsüß","d":"Marktbegriff ohne rechtliche Definition, oft auf feinen restsüßen Rieslingen — sagt nichts Genaues über die Zuckermenge."},{"t":"Gärung","d":"Die Umwandlung des Traubenzuckers in Alkohol und Kohlensäure durch Hefe — der Kern jeder Weinbereitung."},{"t":"Glasverschluss","d":"Ein dichter und optisch schöner Glasstopfen, aber teurer als Kork oder Schraube."},{"t":"Gran Reserva","d":"Spanien: mindestens fünf Jahre Reife und nur in herausragenden Jahrgängen erzeugt."},{"t":"Grand Cru","d":"Frankreich: die höchste Lagen-Einstufung, die besten Einzellagen eines Gebiets."},{"t":"Großes Gewächs (GG)","d":"Höchste Stufe für trockene Lagenweine im VDP — die deutsche Antwort auf den Grand Cru."},{"t":"halbtrocken","d":"Bis 18 g/l Restzucker: eine zarte Restsüße, die die Säure abrundet, ohne süß zu schmecken."},{"t":"Hefe","d":"Die Mikroorganismen, die bei der Gärung den Zucker in Alkohol und Kohlensäure umwandeln — ob spontan aus dem Weinberg oder als Reinzuchthefe zugesetzt."},{"t":"Jahrgang","d":"Das Erntejahr auf dem Etikett. Es zählt vor allem in Klimaregionen mit schwankendem Wetter und bei lagerfähigen Weinen; bei Alltagsweinen aus warmen Zonen ist es nebensächlich."},{"t":"Joven","d":"Spanien: jung abgefüllt, mit wenig oder keinem Holz."},{"t":"Kabinett","d":"Unterste Prädikatsstufe, aus normal reifen Trauben — meist leicht und frisch."},{"t":"Karaffieren","d":"Einen jungen, noch verschlossenen Wein kräftig in eine weite Karaffe gießen, damit er Sauerstoff aufnimmt — das weicht die Tannine und öffnet das Aroma. Merksatz: junger Wein will Luft, alter Wein will Ruhe."},{"t":"Korkschmecker","d":"Muffiger Ton nach nasser Pappe oder Keller — ein Fehler im Korken. Eine so betroffene Flasche darf man im Restaurant zurückgeben."},{"t":"Körper","d":"Das Gewicht des Weins am Gaumen, von leicht und schlank bis voll und füllig — der Vergleich: Magermilch gegen Sahne."},{"t":"Kretzer","d":"Südtiroler Bezeichnung für Rosé (Gegenstück zu „Rubin“ für Rotwein), oft aus Lagrein oder Vernatsch."},{"t":"Lage / Einzellage","d":"Ein abgegrenzter Weinberg mit eigenem Namen. Die Einzellage ist die kleinste Herkunftseinheit — Grundlage der Lagenklassifikation (Cru, Grand Cru, Großes Gewächs)."},{"t":"lieblich","d":"Über 18 bis 45 g/l Restzucker — deutlich und angenehm süß, klassisch bei feinen Rieslingen."},{"t":"Maischegärung","d":"Die Gärung des Mosts samt Beerenschalen und Kernen (der „Maische“). Bei Rotwein der Normalfall, weil sich aus den Schalen Farbe und Tannin lösen; Weißwein vergärt meist ohne Schalen."},{"t":"Malolaktische Gärung","d":"Der biologische Säureabbau (BSA): Milchsäurebakterien wandeln die harte Apfelsäure in mildere Milchsäure um. Macht den Wein weicher und cremiger — das Buttrige im Chardonnay — und ist bei fast allen Rotweinen Standard."},{"t":"Most","d":"Der frisch gepresste, noch ungegorene Traubensaft — der Ausgangsstoff jeder Weinbereitung, vor Beginn der Gärung."},{"t":"Naturkork","d":"Traditioneller Verschluss aus Korkrinde; lässt minimal Luft zu und ist reiffördernd — kann aber „korken“."},{"t":"Naturwein","d":"Kein geschützter Begriff; meint meist minimale Eingriffe im Keller, wenig oder keinen Schwefel und oft eine trübe Optik — ein Stil, der polarisiert."},{"t":"Œil de Perdrix","d":"Schweizer Rosé („Rebhuhnauge“), klassisch aus Pinot Noir — zart lachsfarben."},{"t":"Oxidation","d":"Flacher, sherryartiger Eindruck, die Frucht ist weg — Folge von zu viel Luftkontakt."},{"t":"Perlage","d":"Das feine Aufsteigen der Kohlensäure-Bläschen im Schaumwein; eine feine, anhaltende Perlage gilt als Qualitätsmerkmal."},{"t":"Perlwein","d":"Leicht moussierender Wein mit weniger Kohlensäuredruck als Schaumwein (unter 3 bar) — fein prickelnd statt schäumend."},{"t":"Phenole","d":"Sammelbegriff für die Gerb- und Farbstoffe aus Schalen, Kernen und Stielen; dazu zählen die Tannine und die roten Anthocyane. Sie geben Farbe, Struktur und Lagerfähigkeit."},{"t":"Prädikat","d":"Eine Stufe vor allem auf deutschen und österreichischen Flaschen, die die Reife der Trauben bei der Lese angibt — nicht direkt die Süße und nicht die Fasszeit. Die Stufen, aufsteigend: Kabinett, Spätlese, Auslese, Beerenauslese, Eiswein und Trockenbeerenauslese."},{"t":"Premier Cru","d":"Frankreich: eine hochrangige Einzellage unterhalb des Grand Cru — Qualitäts- und Herkunftsangabe, kein Alter."},{"t":"QbA","d":"Qualitätswein bestimmter Anbaugebiete: die deutsche Basisstufe unter den Prädikatsweinen; darf angereichert werden."},{"t":"Rebsorte","d":"Die Traubensorte, aus der ein Wein gemacht ist. Sie gibt den Grundton vor — Klima, Boden und Ausbau formen ihn aber mindestens genauso."},{"t":"reinsortig","d":"Aus einer einzigen Rebsorte erzeugt, das Gegenteil der Cuvée. Je nach Weinrecht sind kleine Anteile anderer Sorten erlaubt."},{"t":"Reinzuchthefe","d":"Im Labor ausgewählte, gezielt zugesetzte Hefe für eine kontrollierte Gärung — das Gegenstück zur spontanen Gärung mit der natürlichen Hefe aus dem Weinberg."},{"t":"Reserva","d":"Spanien: mindestens drei Jahre Reife (eines im Fass) — die klassische Stufe."},{"t":"Restzucker","d":"Der Zucker, der nach der Gärung im Wein verbleibt — er allein bestimmt die Geschmacksangabe von trocken bis süß, nicht das Aroma. Gemessen in Gramm pro Liter."},{"t":"Riserva","d":"Italien: eine längere Mindestreife als der Grundwein; wie lang genau, hängt von der Appellation ab."},{"t":"Rosado / Rosato","d":"Spanisch (Rosado) bzw. italienisch (Rosato) für Rosé."},{"t":"Säure","d":"Das Rückgrat des Weins: macht ihn frisch, lebendig und haltbar und lässt ihn zum Essen funktionieren. Zu wenig wirkt schlaff, zu viel scharf."},{"t":"Schaumwein","d":"Wein mit Kohlensäure, die für Perlage und Schaum sorgt — meist durch eine zweite Gärung (Sekt, Champagner, Cava). Über 3 bar Druck spricht man von Schaumwein, darunter von Perlwein."},{"t":"Schilcher","d":"Steirischer Rosé aus der Rebsorte Blauer Wildbacher: blass, sehr säurebetont und unverwechselbar herb."},{"t":"Schillerwein","d":"Württemberger Spezialität: Rosé aus rot und weiß gemeinsam gelesenen und gekelterten Trauben — nicht der Verschnitt fertiger Weine."},{"t":"Schraubverschluss","d":"Dichter Metallverschluss, ideal für frische Weine zum baldigen Trinken; schließt einen Korkschmecker aus und ist längst kein Billig-Signal mehr."},{"t":"sec","d":"Französisch für trocken. Bei Schaumwein aber Vorsicht: „sec“ ist dort schon leicht süßlich."},{"t":"Sekt","d":"Deutscher Qualitätsschaumwein mit mindestens 3,5 bar Kohlensäuredruck."},{"t":"Smaragd","d":"Höchste Reifestufe der Wachau (Vinea Wachau): trockene, vollreife und kräftige Weißweine aus den spätest gelesenen Trauben."},{"t":"Spätlese","d":"Prädikat aus später gelesenen, reiferen Trauben; mehr Substanz als Kabinett, trocken bis lieblich ausbaubar."},{"t":"Steinfeder","d":"Leichteste Reifestufe der Wachau (Vinea Wachau): zarte, trockene Weißweine bis 11,5 % vol — unterhalb von Federspiel und Smaragd."},{"t":"Strohwein / Schilfwein","d":"Österreichische Prädikatsstufe: süßer Wein aus Trauben, die nach der Lese auf Stroh oder Schilf getrocknet werden, um den Zucker zu konzentrieren."},{"t":"Sulfite","d":"Schwefel als Konservierungsmittel: schützt den Wein vor Oxidation und Keimen, ein Teil entsteht ohnehin bei der Gärung. Ab einem Schwellenwert ist der Hinweis Pflicht — der Kopfschmerz-Mythos hält der Prüfung kaum stand."},{"t":"Superiore","d":"Italien: etwas mehr Alkohol und Substanz als die Basis — keine Reifeangabe."},{"t":"süß","d":"Über 45 g/l Restzucker: satt und ausgeprägt süß, der Bereich der edelsüßen Dessertweine."},{"t":"Tannin","d":"Die Gerbstoffe aus Schale, Kernen und Holzfass, die das pelzige, zusammenziehende Mundgefühl erzeugen (wie stark gezogener schwarzer Tee). Tannin gibt vor allem Rotwein Struktur und macht ihn lagerfähig."},{"t":"Terroir","d":"Das Zusammenspiel aus Boden, Klima, Lage und Tradition, das einem Wein seinen ortstypischen Charakter gibt — der Grund, warum dieselbe Rebe an zwei Orten verschieden schmeckt."},{"t":"Tinto","d":"Spanisch und portugiesisch für „rot“ — schlicht ein Rotwein (etwa Tempranillo Tinto)."},{"t":"Tränen","d":"Die Schlieren, die nach dem Schwenken an der Glaswand herablaufen, auch „Kirchenfenster“. Sie zeigen Alkohol- und Zuckergehalt an — kein Qualitätsmaß, nur Physik."},{"t":"Trinktemperatur","d":"Die Serviertemperatur verändert den Wein stark: je kräftiger und gerbstoffreicher, desto wärmer; je leichter, frischer und süßer, desto kühler. Im Zweifel lieber etwas zu kühl einschenken und im Glas erwärmen lassen."},{"t":"trocken","d":"Bis 9 g/l Restzucker — der Zucker ist fast vollständig zu Alkohol vergoren, keine spürbare Süße. Klassisch trockene Weine bleiben meist unter 4 g/l."},{"t":"Trockenbeerenauslese","d":"Höchste deutsche Prädikatsstufe (kurz TBA), aus rosinenartig eingetrockneten edelfaulen Beeren — extrem süß, konzentriert und teuer."},{"t":"Vendange Tardive","d":"Französisch für „späte Lese“: die edle Spätlese-Kategorie des Elsass aus spät geernteten, hochreifen Trauben — konzentriert, meist restsüß."},{"t":"Vin Jaune","d":"Jura-Spezialität: oxidativ unter Florhefe („sous voile“) ausgebauter „gelber Wein“ aus Savagnin — nussig, langlebig, im 0,62-l-Clavelin."},{"t":"Weinstein","d":"Kleine farblose oder rötliche Kristalle am Korken oder Flaschenboden, die bei Kälte auskristallisieren. Völlig harmlos und geschmacksneutral — kein Glassplitter, kein Zucker, kein Fehler."},{"t":"Weißherbst","d":"Deutscher Rosé aus einer einzigen roten Rebsorte (mindestens QbA), die aufs Etikett darf — hell und fruchtbetont."},{"t":"Würze","d":"Pfeffer-, Kräuter- und Garrigue-Noten, vor allem im Rotwein. Ein Syrah zeigt deutlichen schwarzen Pfeffer, den ein Cabernet kaum berührt."}];
 const HERKUNFT = {"Bordeaux": {"land": "Frankreich", "sorten": ["Cabernet Sauvignon", "Merlot", "Cabernet Franc"], "note": "meist ein Cuvée mehrerer Sorten"}, "Burgund (Bourgogne)": {"land": "Frankreich", "sorten": ["Spätburgunder", "Chardonnay"], "note": "rot = Spätburgunder, weiß = Chardonnay"}, "Champagne": {"land": "Frankreich", "sorten": ["Chardonnay", "Spätburgunder", "Schwarzriesling"], "note": "Schaumwein aus drei Sorten"}, "Beaujolais": {"land": "Frankreich", "sorten": ["Gamay"]}, "Châteauneuf-du-Pape": {"land": "Frankreich", "sorten": ["Grenache"], "note": "Grenache-betonter Cuvée"}, "Sancerre": {"land": "Frankreich", "sorten": ["Sauvignon Blanc"]}, "Chablis": {"land": "Frankreich", "sorten": ["Chardonnay"]}, "Cahors": {"land": "Frankreich", "sorten": ["Malbec"]}, "Chianti": {"land": "Italien", "sorten": ["Sangiovese"]}, "Barolo": {"land": "Italien", "sorten": ["Nebbiolo"]}, "Barbaresco": {"land": "Italien", "sorten": ["Nebbiolo"]}, "Brunello di Montalcino": {"land": "Italien", "sorten": ["Sangiovese"]}, "Valpolicella": {"land": "Italien", "sorten": ["Corvina"]}, "Soave": {"land": "Italien", "sorten": ["Garganega"]}, "Montepulciano d'Abruzzo": {"land": "Italien", "sorten": ["Montepulciano"]}, "Rioja": {"land": "Spanien", "sorten": ["Tempranillo"]}, "Ribera del Duero": {"land": "Spanien", "sorten": ["Tempranillo"]}, "Priorat": {"land": "Spanien", "sorten": ["Grenache", "Carignan"], "note": "meist ein Cuvée"}, "Douro": {"land": "Portugal", "sorten": ["Touriga Nacional"]}, "Vinho Verde": {"land": "Portugal", "sorten": ["Vinho Verde"]}, "Provence": {"land": "Frankreich", "sorten": ["Provence-Rosé"]}, "Côtes du Rhône": {"land": "Frankreich", "sorten": ["Grenache", "Syrah / Shiraz"], "note": "meist ein Grenache-Syrah-Cuvée"}};
 const HERK_ORDER = ["Frankreich", "Italien", "Spanien", "Portugal"];
 function findGrape(name){
@@ -3333,7 +3337,18 @@ function glLinkify(def,cur){
     return pre+'<span class="gloss-ref" data-term="'+glEsc(c)+'">'+tok+'</span>';
   });
 }
+function glossScrollTo(el){
+  var r=el.getBoundingClientRect();
+  var y=(window.pageYOffset||document.documentElement.scrollTop||0)+r.top;
+  var off=Math.max(14,(window.innerHeight-r.height)/2);
+  window.scrollTo({top:Math.max(0,y-off),behavior:"smooth"});
+}
+var glossStack=[],glossJumpTarget=null;
+function glossBackPush(t){ glossStack.push(t); glossBackUpdate(); }
+function glossBackUpdate(){ var b=$("gloss-back"); if(!b) return; if(glossStack.length){ b.hidden=false; var l=$("gloss-back-label"); if(l) l.textContent="Zu "+glossStack[glossStack.length-1]; } else { b.hidden=true; } }
+function glossBackGo(){ var t=glossStack.pop(); glossBackUpdate(); if(!t) return; gotoGlossTerm(t); }
 function gotoGlossTerm(term, fromSearch){
+  glossJumpTarget=term;
   var f=$("start-suche");
   if(f&&f.value.trim()){f.value="";startSuche();}
   var items=$("glossar-list").querySelectorAll(".gloss-item"),target=null;
@@ -3342,7 +3357,7 @@ function gotoGlossTerm(term, fromSearch){
   $("glossar-list").querySelectorAll(".gloss-item.open").forEach(function(o){ if(o!==target){o.classList.remove("open");var dd=o.querySelector(".gloss-def");if(dd)dd.style.maxHeight=null;} });
   if(!target.classList.contains("open")){target.classList.add("open");var d=target.querySelector(".gloss-def");if(d)d.style.maxHeight=d.scrollHeight+"px";}
   if(fromSearch) target.classList.add("gloss-jumped");
-  target.scrollIntoView({behavior:"smooth",block:"center"});
+  setTimeout(function(){ glossScrollTo(target); }, 340);
 }
 function glossItem(e, extra, link){
   var def = link ? glLinkify(e.d, e.t) : e.d;
@@ -3360,8 +3375,9 @@ function renderGlossar(q){
     });
     let html = "";
     order.forEach(L=>{
-      html += `<div class="gloss-letter">${L}</div>`;
+      html += `<div class="gloss-letter">${L}</div><div class="gloss-box">`;
       groups[L].forEach(e=> html += glossItem(e, "", true));
+      html += `</div>`;
     });
     list.innerHTML = html;
     $("glossar-empty").hidden = true;
@@ -3383,8 +3399,9 @@ function renderGlossar(q){
     nameHits.forEach((e, i)=> html += glossItem(e, textHits.length && i === nameHits.length - 1 ? " gloss-cut" : "", true));
   }
   if(textHits.length){
-    html += `<div class="gloss-sec gloss-sec-text">Begriff im Erklärtext erwähnt</div>`;
+    html += `<div class="gloss-sec gloss-sec-text">Begriff im Erklärtext erwähnt</div><div class="gloss-box">`;
     textHits.forEach(e=> html += glossItem(e, "", true));
+    html += `</div>`;
   }
   list.innerHTML = html;
   $("glossar-empty").hidden = true;
@@ -3397,6 +3414,7 @@ function toggleGlossItem(item){
   const def = item.querySelector(".gloss-def");
   const open = item.classList.toggle("open");
   def.style.maxHeight = open ? def.scrollHeight + "px" : null;
+  if(!open && glossStack.length && item.getAttribute("data-t")===glossJumpTarget){ glossBackGo(); return; }
   if(open){
     const term = item.querySelector(".gloss-term");
     const predictedBottom = (term ? term.getBoundingClientRect().bottom : item.getBoundingClientRect().bottom) + def.scrollHeight;
@@ -3447,7 +3465,7 @@ function wireEssen(){
   let vegOn=false;
   function openCat(cid,scroll){list.querySelectorAll(".re-cat").forEach(c=>c.classList.remove("open"));const t=document.getElementById("re-cat-"+cid);if(t){t.classList.add("open");if(scroll)t.scrollIntoView({behavior:"smooth",block:"start"});}}
   function applyVeg(){
-    list.querySelectorAll(".re-cat").forEach(cat=>{let any=false;cat.querySelectorAll(".re-dish").forEach(d=>{const v=d.dataset.veg==="1";d.classList.toggle("vhide",!v);if(v)any=true;});cat.classList.toggle("vhide",!any);if(any)cat.classList.add("open");});
+    list.querySelectorAll(".re-cat").forEach(cat=>{let any=false;cat.querySelectorAll(".re-dish").forEach(d=>{const v=d.dataset.veg==="1";d.classList.toggle("vhide",!v);if(v)any=true;});cat.classList.toggle("vhide",!any);if(any)cat.classList.remove("open");});
     list.querySelectorAll(".re-grp").forEach(g=>{let n=g.nextElementSibling,vis=false;while(n&&!n.classList.contains("re-grp")){if(n.classList.contains("re-cat")&&!n.classList.contains("vhide")){vis=true;break;}n=n.nextElementSibling;}g.classList.toggle("vhide",!vis);});
   }
   function clearVeg(){list.querySelectorAll(".vhide").forEach(e=>e.classList.remove("vhide"));}
@@ -3572,11 +3590,11 @@ function buildStart(){
   $("mode-lookup").addEventListener("click", ()=>{ const li=$("start-suche"); if(li) li.value=""; document.querySelectorAll("#lookup-browse .gloss-item.open").forEach(o=>{ o.classList.remove("open","gloss-jumped"); const dd=o.querySelector(".gloss-def"); if(dd) dd.style.maxHeight=null; }); startSuche(); showScreen("screen-nachschlagen"); setTimeout(()=>{ const i=$("start-suche"); if(i) i.focus(); }, 60); });
   $("lookup-back").addEventListener("click", ()=> showScreen("screen-start"));
   $("mode-herkunft").addEventListener("click", ()=>{ buildHerkunft(); showScreen("screen-herkunft"); });
-  $("start-suche").addEventListener("input", startSuche);
+  $("start-suche").addEventListener("input", function(){ glossStack.length=0; glossBackUpdate(); startSuche(); });
   { const cb=$("start-clear"); if(cb) cb.addEventListener("click", ()=>{ const ip=$("start-suche"); ip.value=""; startSuche(); ip.blur(); }); }
   $("wissen-back").addEventListener("click", ()=> showScreen("screen-start"));
   renderGlossar("");
-  $("glossar-list").addEventListener("click", e=>{ const r = e.target.closest(".gloss-ref"); if(r){ e.stopPropagation(); gotoGlossTerm(r.getAttribute("data-term")); return; } const t = e.target.closest(".gloss-term"); if(t) toggleGlossItem(t.closest(".gloss-item")); });
+  $("glossar-list").addEventListener("click", e=>{ const r = e.target.closest(".gloss-ref"); if(r){ e.stopPropagation(); var src=r.closest(".gloss-item"); if(src&&src.getAttribute("data-t")) glossBackPush(src.getAttribute("data-t")); gotoGlossTerm(r.getAttribute("data-term")); return; } const t = e.target.closest(".gloss-term"); if(t) toggleGlossItem(t.closest(".gloss-item")); });
   $("lkmode-cards").addEventListener("click", ()=>{ lookupCompact=false; $("lkmode-cards").classList.add("active"); $("lkmode-compact").classList.remove("active"); startSuche(); });
   $("lkmode-compact").addEventListener("click", ()=>{ lookupCompact=true; $("lkmode-compact").classList.add("active"); $("lkmode-cards").classList.remove("active"); startSuche(); });
   $("type-back").addEventListener("click", ()=> showScreen("screen-start"));
@@ -3683,7 +3701,7 @@ function startSuche(){
   if(!box) return;
   if(!qn){
     box.hidden = true; box.innerHTML = "";
-    const lb=$("lookup-browse"); if(lb) lb.hidden=false;
+    const lb=$("lookup-browse"); if(lb) lb.hidden=false; const lh=$("lookup-hint"); if(lh) lh.hidden=false;
     const lm=$("lookup-mode"); if(lm) lm.hidden=true;
     const sg0=$("lookup-sugg"); if(sg0){ sg0.hidden=true; sg0.innerHTML=""; }
     const sw0=document.querySelector(".start-search"); if(sw0) sw0.classList.remove("has-sugg");
@@ -3784,19 +3802,20 @@ function startSuche(){
   const C = lookupCompact;
   const glC = e=> `<button class="lk-row lk-gloss" type="button" data-term="${e.t}"><span class="lk-main"><span class="lk-name">${e.t}</span></span><span class="lk-tag">Begriff</span></button>`;
   const sections = [];
-  if(rows.length) sections.push(`<div class="lookup-cat">Rebsorten</div>` + (C?rowsC:rows).join(""));
-  if(infoRows.length) sections.push(`<div class="lookup-cat">Andere Namen</div>` + (C?infoRowsC:infoRows).join(""));
+  if(rows.length) sections.push(`<div class="lookup-cat">Rebsorten</div>` + (C?`<div class="gloss-box">`+rowsC.join("")+`</div>`:rows.join("")));
+  if(infoRows.length) sections.push(`<div class="lookup-cat">Andere Namen</div>` + (C?`<div class="gloss-box">`+infoRowsC.join("")+`</div>`:infoRows.join("")));
   if(glossName.length || glossText.length){
     let gh = `<div class="lookup-cat">Fachbegriffe</div>`;
-    glossName.forEach(e=> gh += C?glC(e):glossItem(e));
+    if(glossName.length){ gh += `<div class="gloss-box">`; glossName.forEach(e=> gh += C?glC(e):glossItem(e)); gh += `</div>`; }
     if(glossText.length){
-      gh += `<div class="gloss-sec gloss-sec-text">Im Erklärtext erwähnt</div>`;
+      gh += `<div class="gloss-sec gloss-sec-text">Im Erklärtext erwähnt</div><div class="gloss-box">`;
       glossText.forEach(e=> gh += C?glC(e):glossItem(e));
+      gh += `</div>`;
     }
     sections.push(gh);
   }
-  if(herkRows.length) sections.push(`<div class="lookup-cat">Herkunft</div>` + (C?herkRowsC:herkRows).join(""));
-  const lb2=$("lookup-browse"); if(lb2) lb2.hidden=true;
+  if(herkRows.length) sections.push(`<div class="lookup-cat">Herkunft</div><div class="gloss-box">` + (C?herkRowsC:herkRows).join("") + `</div>`);
+  const lb2=$("lookup-browse"); if(lb2) lb2.hidden=true; const lh2=$("lookup-hint"); if(lh2) lh2.hidden=true;
   const lm=$("lookup-mode"); if(lm) lm.hidden=false;
   box.hidden = false;
   box.innerHTML = sections.length ? sections.join("") : `<p class="browse-empty">Nichts gefunden.</p>`;
@@ -3813,7 +3832,7 @@ function startSuche(){
   }
 }
 function simSprung(el){
-  gotoWein(el.dataset.grape, {kind:'wein', name: state.weinAktuell});
+  gotoWein(el.dataset.grape, {kind:'wein', name: el.dataset.from || state.weinAktuell});
 }
 function vomQuizZuInfo(name){
   state.weinStack = [];
@@ -3835,14 +3854,14 @@ function kennerHTML(g){
   return g.kennerwissen ? `<div class="kenner"><span class="kenner-tag"><svg class="kenner-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5C17.7 10.2 18 9 18 7.5a6 6 0 0 0-12 0c0 1.5.5 2.7 1.5 4 .8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>Kenner-Wissen</span>${g.kennerwissen}</div>` : "";
 }
 
-function grapeDetail(g, voll=false, find=voll, hideBars=false){
+function grapeDetail(g, voll=false, find=voll, hideBars=false, klappbar=false){
   const axes = AX_ORDER[state.type];
   const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   let simBlock = "", findBlock = "";
   if(voll){
     const sims = aehnlich(g);
     simBlock = sims.length
-      ? `<div class="sim-block"><p class="sim-head">Könnte dir auch schmecken</p><div class="sim-chips">${sims.map(x=>`<button class="sim-chip" type="button" onclick="simSprung(this)" data-grape="${x.name}">${x.name}</button>`).join("")}</div></div>`
+      ? `<div class="sim-block"><p class="sim-head">Könnte dir auch schmecken</p><div class="sim-chips">${sims.map(x=>`<button class="sim-chip" type="button" onclick="simSprung(this)" data-grape="${x.name}" data-from="${g.name}">${x.name}</button>`).join("")}</div></div>`
       : `<div class="sim-block"><p class="sim-solo">${g.name} ist eigenständig — keine eng verwandte Sorte in dieser Auswahl.</p></div>`;
   }
   if(find){
@@ -3855,7 +3874,7 @@ function grapeDetail(g, voll=false, find=voll, hideBars=false){
   const kopfBox = (introHtml || sbHtml) ? `<div class="kopf-box">${introHtml}${sbHtml}</div>` : "";
   const kennerBlock = kennerHTML(g);
   const topUnit = (kopfBox || kennerBlock) ? `<div class="sb-unit">${kopfBox}${kennerBlock}</div>` : "";
-  return `<details class="sb-fold" open><summary><span class="sb-fold-t">Steckbrief</span><svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary>
+  return `${klappbar?`<details class="sb-fold" open><summary><span class="sb-fold-t">Steckbrief</span><svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary>`:""}
     ${topUnit}
     ${hideBars ? "" : `<div class="dcell full bars-box"><h5>${I.profile} Geschmacksprofil</h5><div class="mini-bars">${barRows(axes.includes("alkohol") ? axes : [...axes, "alkohol"], g.p, true)}</div></div>`}
     <div class="detail-grid">
@@ -3863,7 +3882,7 @@ function grapeDetail(g, voll=false, find=voll, hideBars=false){
       <div class="dcell"><h5>${I.temp} Trinktemperatur</h5><div class="temp-val">${g.temp}</div></div>
       <div class="dcell full"><div class="food-head"><h5>${I.food} Passt zu</h5></div>${chips(g.speisen)}${g.pairings&&g.pairings.length?`<details class="pairings-inline" open><summary><span class="pi-lbl">Gerichte im Detail</span><svg class="pi-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary><div class="pi-body">${g.pairings.map(p=>`<div class="pm-item"><div class="pm-gericht">${esc(p.gericht)}</div><div class="pm-desc">${esc(p.text)}</div></div>`).join("")}</div></details>`:""}</div>${findBlock}
     </div>
-    ${simBlock}</details>`;
+    ${simBlock}${klappbar?"</details>":""}`;
 }
 
 function openBrowse(t){
@@ -4971,7 +4990,7 @@ function renderResults(forceName){
   const detail = isExplored
     ? `<div class="more-h">Mehr zu ${top.g.name}</div>${grapeDetail(top.g, true)}`
     : `
-    ${grapeDetail(top.g, false, true, true)}`;
+    ${grapeDetail(top.g, false, true, true, true)}`;
 
   const runnerCard = (r, rankLabel, open) => `
     <div class="runner${open ? " open" : ""}">
