@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>Wein-Berater v5.68 — Finde deinen Lieblingswein</title>
+<title>Wein-Berater v5.75 — Finde deinen Lieblingswein</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -68,6 +68,18 @@ body::before{
 .lookup-hint{font-size:11.5px;color:var(--muted-2);font-style:italic;margin:2px 2px 12px;line-height:1.45;}
 .gloss-box{background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow-sm);padding:2px 13px;margin:0 0 6px;overflow:hidden;overflow:clip;}
 .gloss-box>:last-child{border-bottom:none;}
+
+.gloss-pop{position:fixed;inset:0;z-index:90;background:rgba(40,20,25,.42);display:flex;align-items:center;justify-content:center;padding:20px;}
+.gloss-pop[hidden]{display:none;}
+.gp-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px -20px rgba(40,15,20,.55);max-width:420px;width:100%;max-height:78vh;overflow-y:auto;padding:16px 18px 20px;animation:rise .28s ease both;}
+.gp-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.gp-head h3{flex:1;font-family:Georgia,serif;font-size:21px;font-weight:600;color:var(--text);margin:0;}
+.gp-close{flex:none;background:var(--panel-2);border:1px solid var(--line);border-radius:50%;width:32px;height:32px;font-size:15px;color:var(--muted);cursor:pointer;line-height:1;}
+.gp-back{flex:none;background:none;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;padding:2px 4px;}
+.gp-back[hidden]{display:none;}
+.gp-text{font-size:14.5px;line-height:1.6;color:var(--muted);margin:0;}
+.gloss-item.gloss-jumped{animation:glossPuls 1.6s ease-out 1;}
+@keyframes glossPuls{0%,55%{box-shadow:inset 0 0 0 2px var(--accent);}100%{box-shadow:none;}}
 .gloss-back{position:fixed;left:14px;bottom:18px;z-index:60;display:flex;align-items:center;gap:8px;background:var(--accent);color:#fff;border:none;border-radius:999px;padding:12px 17px;font-weight:700;font-size:14px;box-shadow:0 10px 22px -8px rgba(59,27,35,.5);cursor:pointer;}
 .gloss-back[hidden]{display:none;}
 .gloss-back svg{width:15px;height:15px;flex:none;}
@@ -299,6 +311,7 @@ body::before{
 .radar-wrap{display:grid;place-items:center;}
 .radar-wrap svg{width:100%;max-width:330px;height:auto;}
 .rb-radar{margin:0;}
+.rb-aromen{margin:14px 0 2px;}
 .chip-hint{font-size:12px;color:var(--muted-2);margin:0 0 10px;line-height:1.45;}
 .rb-radar svg{max-width:330px;}
 .radar-anim{transform-origin:center;animation:pop .6s cubic-bezier(.2,.8,.2,1) both;}
@@ -786,7 +799,7 @@ body::before{
         <span class="card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </button>
     </div>
-    <div class="appver">Wein-Berater · v5.68</div>
+    <div class="appver">Wein-Berater · v5.75</div>
   </section>
 
   <section class="screen" id="screen-nachschlagen">
@@ -801,6 +814,16 @@ body::before{
     </div>
     <div class="start-treffer" id="start-treffer"></div>
     <button class="gloss-back" id="gloss-back" type="button" hidden onclick="glossBackGo()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg><span id="gloss-back-label">Zurück</span></button>
+    <div class="gloss-pop" id="gloss-pop" hidden>
+      <div class="gp-card" role="dialog" aria-modal="true">
+        <div class="gp-head">
+          <button class="gp-back" id="gp-back" type="button" hidden onclick="glossPopBack()">‹ Zurück</button>
+          <h3 id="gp-title"></h3>
+          <button class="gp-close" type="button" aria-label="Schließen" onclick="glossPopClose()">✕</button>
+        </div>
+        <p class="gp-text" id="gp-text"></p>
+      </div>
+    </div>
     <div class="lookup-browse" id="lookup-browse">
       <div class="lookup-cat">Fachbegriffe A–Z</div>
       <div id="glossar-list" class="glossar-list"></div>
@@ -982,6 +1005,8 @@ const WISSEN = {
   "Weinstein": {t:"Kleine farblose oder r\u00f6tliche Kristalle am Korken oder am Flaschenboden sind kein Grund zur Sorge.\n\nEs ist Weinstein \u2014 Kaliumtartrat, das bei K\u00e4lte auskristallisiert. Er ist v\u00f6llig harmlos, geschmacksneutral und oft sogar ein Zeichen schonender Behandlung.\n\nKein Glassplitter, kein Zucker und ganz sicher kein Fehler.", regelKopf:"Die Weindiamanten", regel:[["Was es ist","Weinstein (Kaliumtartrat)"],["Entsteht durch","K\u00e4lte"],["Gef\u00e4hrlich?","nein, harmlos"]]}
 };
 const BSP_INFO = {
+  "Bacchus trocken": "Die trockene Lesart der deutschen Neuzüchtung: duftet betont blumig nach Holunderblüte, Muskat und Johannisbeere, bleibt am Gaumen aber schlank und säurearm — ein Wein, der mehr verspricht, als er dann herzhaft trocken einlöst. Zu Hause vor allem in Franken und Rheinhessen.",
+  "Bacchus Kabinett": "Die leichteste Prädikatsstufe: aus vollreifen Trauben, ohne zugesetzten Zucker, entsprechend moderat im Alkohol. Oft mit einer feinen Restsüße, die das blumig-muskatige Bouquet trägt — der klassische Sommerwein zur Brotzeit.",
   "Alsace Gewurztraminer trocken": "Im Elsass die trockene Lesart des großen Aromatikers: intensiv nach Rosen, Litschi und Gewürzen, vollmundig und kräftig — duftet wie ein süßer Wein, schmeckt aber herzhaft trocken.",
   "Gewürztraminer Spätlese": "Spät gelesener Gewürztraminer aus vollreifen Trauben: mehr Schmelz und Konzentration, meist mit feiner Restsüße — die opulente, dessertnahe Seite der Sorte.",
   "Vendange Tardive": "Französisch für 'späte Lese': die edle Spätlese-Kategorie des Elsass aus spät geernteten, hochreifen Trauben — konzentriert, meist restsüß und ausgesprochen langlebig.",
@@ -3341,27 +3366,95 @@ function glLinkify(def,cur){
   });
 }
 function glossScrollTo(el){
-  var r=el.getBoundingClientRect();
-  var y=(window.pageYOffset||document.documentElement.scrollTop||0)+r.top;
-  var off=Math.max(14,(window.innerHeight-r.height)/2);
-  window.scrollTo({top:Math.max(0,y-off),behavior:"smooth"});
+  var run=function(){
+    try{
+      var r=el.getBoundingClientRect();
+      var h=Math.min(r.height, window.innerHeight);
+      var cur=(window.pageYOffset||window.scrollY||document.documentElement.scrollTop||document.body.scrollTop||0);
+      var off=Math.max(60,(window.innerHeight-h)/2);
+      var top=Math.max(0, cur + r.top - off);
+      window.scrollTo(0, top);
+      if(document.scrollingElement) document.scrollingElement.scrollTop=top;
+      document.documentElement.scrollTop=top;
+      document.body.scrollTop=top;
+    }catch(_e){ try{ el.scrollIntoView({block:"center"}); }catch(_x){} }
+  };
+  run();
+  setTimeout(run,140);
 }
 var glossStack=[],glossJumpTarget=null;
 function glossBackPush(t){ glossStack.push(t); glossBackUpdate(); }
 function glossBackUpdate(){ var b=$("gloss-back"); if(!b) return; if(glossStack.length){ b.hidden=false; var l=$("gloss-back-label"); if(l) l.textContent="Zu "+glossStack[glossStack.length-1]; } else { b.hidden=true; } }
 function glossBackGo(){ var t=glossStack.pop(); glossBackUpdate(); if(!t) return; gotoGlossTerm(t); }
+var glossPopStack=[];
+function glossFind(term){
+  var w=String(term||"").trim().toLowerCase();
+  for(var i=0;i<GLOSSAR.length;i++){ if(String(GLOSSAR[i].t).trim().toLowerCase()===w) return GLOSSAR[i]; }
+  return null;
+}
+function glossPop(term, push){
+  var e=glossFind(term); if(!e) return;
+  var cur=$("gp-title") ? $("gp-title").textContent : "";
+  if(push && cur) glossPopStack.push(cur);
+  $("gp-title").textContent=e.t;
+  $("gp-text").innerHTML=glLinkify(e.d, e.t);
+  var b=$("gp-back"); if(b) b.hidden = glossPopStack.length===0;
+  var ov=$("gloss-pop"); if(ov){ ov.hidden=false; ov.scrollTop=0; }
+}
+function glossPopBack(){
+  var t=glossPopStack.pop();
+  if(!t){ glossPopClose(); return; }
+  glossPop(t, false);
+  var b=$("gp-back"); if(b) b.hidden = glossPopStack.length===0;
+}
+function glossPopClose(){
+  glossPopStack.length=0;
+  var ov=$("gloss-pop"); if(ov) ov.hidden=true;
+}
 function gotoGlossTerm(term, fromSearch){
   glossJumpTarget=term;
   var f=$("start-suche");
   if(f&&f.value.trim()){f.value="";startSuche();}
-  var items=$("glossar-list").querySelectorAll(".gloss-item"),target=null;
-  for(var i=0;i<items.length;i++){if(items[i].getAttribute("data-t")===term){target=items[i];break;}}
-  if(!target)return;
-  $("glossar-list").querySelectorAll(".gloss-item.open").forEach(function(o){ if(o!==target){o.classList.remove("open");var dd=o.querySelector(".gloss-def");if(dd)dd.style.maxHeight=null;} });
-  if(!target.classList.contains("open")){target.classList.add("open");var d=target.querySelector(".gloss-def");if(d)d.style.maxHeight=d.scrollHeight+"px";}
-  if(fromSearch) target.classList.add("gloss-jumped");
-  setTimeout(function(){ glossScrollTo(target); }, 340);
+  var list=$("glossar-list"); if(!list) return;
+  var items=list.querySelectorAll(".gloss-item"), target=null;
+  var want=String(term||"").trim().toLowerCase();
+  for(var i=0;i<items.length;i++){
+    if(String(items[i].getAttribute("data-t")||"").trim().toLowerCase()===want){ target=items[i]; break; }
+  }
+  if(!target){
+    for(var j=0;j<items.length;j++){
+      var hh=items[j].querySelector("h4");
+      if(hh && hh.textContent.trim().toLowerCase()===want){ target=items[j]; break; }
+    }
+  }
+  if(!target) return;
+  var opens=list.querySelectorAll(".gloss-item.open");
+  for(var k2=0;k2<opens.length;k2++){
+    var o=opens[k2];
+    if(o!==target){ o.classList.remove("open"); o.classList.remove("gloss-jumped"); var dd=o.querySelector(".gloss-def"); if(dd) dd.style.maxHeight=null; }
+  }
+  target.classList.add("open");
+  var d=target.querySelector(".gloss-def");
+  if(d) d.style.maxHeight = d.scrollHeight + "px";
+  target.classList.add("gloss-jumped");
+  var go=function(){
+    try{ target.scrollIntoView({block:"center"}); }catch(_a){}
+    try{
+      var r=target.getBoundingClientRect();
+      var vh=window.innerHeight||600;
+      var cur=(window.pageYOffset||window.scrollY||document.documentElement.scrollTop||document.body.scrollTop||0);
+      var off=Math.max(60,(vh-Math.min(r.height,vh))/2);
+      var top=Math.max(0, cur + r.top - off);
+      window.scrollTo(0, top);
+      if(document.scrollingElement) document.scrollingElement.scrollTop=top;
+      document.documentElement.scrollTop=top;
+      document.body.scrollTop=top;
+    }catch(_b){}
+  };
+  setTimeout(go,380);
+  setTimeout(go,600);
 }
+
 function glossItem(e, extra, link){
   var def = link ? glLinkify(e.d, e.t) : e.d;
   return `<div class="gloss-item${extra || ""}" data-t="${glEsc(e.t)}"><button class="gloss-term" type="button"><h4>${e.t}</h4><svg class="gloss-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button><div class="gloss-def"><p>${def}</p></div></div>`;
@@ -3605,7 +3698,14 @@ function buildStart(){
   { const cb=$("start-clear"); if(cb) cb.addEventListener("click", ()=>{ const ip=$("start-suche"); ip.value=""; startSuche(); ip.blur(); }); }
   $("wissen-back").addEventListener("click", ()=> showScreen("screen-start"));
   renderGlossar("");
-  $("glossar-list").addEventListener("click", e=>{ const r = e.target.closest(".gloss-ref"); if(r){ e.stopPropagation(); var src=r.closest(".gloss-item"); if(src&&src.getAttribute("data-t")) glossBackPush(src.getAttribute("data-t")); gotoGlossTerm(r.getAttribute("data-term")); return; } const t = e.target.closest(".gloss-term"); if(t) toggleGlossItem(t.closest(".gloss-item")); });
+  { var gp=$("gloss-pop"); if(gp){
+    gp.addEventListener("click", function(ev){
+      var lnk=ev.target.closest(".gloss-ref");
+      if(lnk){ ev.preventDefault(); ev.stopPropagation(); glossPop(lnk.getAttribute("data-term"), true); return; }
+      if(ev.target===gp) glossPopClose();
+    });
+  } }
+  $("glossar-list").addEventListener("click", e=>{ const r = e.target.closest(".gloss-ref"); if(r){ e.preventDefault(); e.stopPropagation(); glossPop(r.getAttribute("data-term"), false); return; } const t = e.target.closest(".gloss-term"); if(t) toggleGlossItem(t.closest(".gloss-item")); });
   $("lkmode-cards").addEventListener("click", ()=>{ lookupCompact=false; $("lkmode-cards").classList.add("active"); $("lkmode-compact").classList.remove("active"); startSuche(); });
   $("lkmode-compact").addEventListener("click", ()=>{ lookupCompact=true; $("lkmode-compact").classList.add("active"); $("lkmode-cards").classList.remove("active"); startSuche(); });
   $("type-back").addEventListener("click", ()=> showScreen("screen-start"));
@@ -5032,6 +5132,7 @@ function renderResults(forceName){
           <i><svg class="sw-line" viewBox="0 0 32 8"><line x1="2" y1="4" x2="30" y2="4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>${r.g.name}</i>
         </div><div class="mini-bars">${barRows(axes, r.g.p, true, target)}</div>
         <div class="bars-hint">Balken = ${r.g.name} &nbsp;·&nbsp; gestrichelte Marke = dein Wunsch<br>Zahl = Abweichung vom Wunsch</div>
+        ${r.g.aromen && r.g.aromen.length ? `<div class="rb-aromen">${aromaCards(r.g.aromen)}</div>` : ""}
         <button class="info-jump" type="button" data-grape="${r.g.name}">Mehr zu diesem Wein <span class="ij-arrow">→</span></button>
       </div>
     </div>`;
@@ -5133,7 +5234,25 @@ function renderResults(forceName){
 
   // runner toggles
   $("results-body").querySelectorAll(".runner-head").forEach(h=>{
-    h.addEventListener("click", ()=> h.parentElement.classList.toggle("open"));
+    h.addEventListener("click", ()=>{
+      const me = h.parentElement;
+      const willOpen = !me.classList.contains("open");
+      const before = h.getBoundingClientRect().top;
+      if(willOpen){
+        $("results-body").querySelectorAll(".runner.open").forEach(o=>{
+          if(o!==me && !o.closest("#picked-wine")) o.classList.remove("open");
+        });
+      }
+      me.classList.toggle("open", willOpen);
+      requestAnimationFrame(()=>{
+        const after = h.getBoundingClientRect().top;
+        const delta = after - before;
+        if(Math.abs(delta) > 2){
+          const cur = window.pageYOffset || document.documentElement.scrollTop || 0;
+          window.scrollTo(0, Math.max(0, cur + delta));
+        }
+      });
+    });
   });
   // Sprung zur vollen Info-Seite (Browse-Detail) — aber NICHT für den Inline-Aufklapper
   $("results-body").querySelectorAll(".info-jump").forEach(b=>{
