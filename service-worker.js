@@ -1,5 +1,5 @@
-/* Wein-Berater Service Worker — wein-berater-v5_76 */
-const CACHE = "wein-berater-v5_76";
+/* Wein-Berater Service Worker — wein-berater-v5_77 */
+const CACHE = "wein-berater-v5_77";
 const ASSETS = [
   "./",
   "./index.html",
