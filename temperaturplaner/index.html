@@ -1,6 +1,6 @@
 <!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1A1113">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-1-8.png"><link rel="icon" href="icon-192-1-8.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-1-9.png"><link rel="icon" href="icon-192-1-9.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Temperatur">
 <style>body{margin:0}[hidden]{display:none!important}</style></head><body><script>document.documentElement.dataset.theme = "dark";   // Standard: dunkel, unabhängig von der Systemeinstellung</script>
 <title>Wein-Temperaturplaner</title>
@@ -1234,7 +1234,7 @@ function decHtml() {
   // Rotwein: Hauptzweck ist Luft (karaffieren) bzw. Bodensatz trennen (dekantieren). Weiß/Rosé: nur Servieren –
   // geschmacklich bringt es meist nichts, aber die Karaffe ändert die Temperatur, und das wird mitgerechnet.
   const red = inp.color === "Rot";
-  const why = (red ? "Junge, kräftige Rote bekommen in der Karaffe Luft (genau: karaffieren), alte trennt man vom Bodensatz."
+  const why = (red ? "Junge, kräftige Rote bekommen in der Karaffe Luft, alte trennt man so vom Bodensatz."
     : "Geschmacklich bringt die Karaffe hier meist nichts.") + ` <span class="dw">Karaffe und Raum verändern die Temperatur – der Planer rechnet das ein.</span>`;
   return `<label class="check"><input type="checkbox" class="decOn"${inp.decant ? " checked" : ""}>${red ? "Dekantieren" : "Aus der Karaffe servieren"}</label>` + (!inp.decant ? `<small class="decRec">${why}</small>` : "") +
     (inp.decant ? `<div class="grow"><span class="lbl">${red ? "Wie lange Luft vor dem Einschenken?" : "Wie lange in der Karaffe vor dem Einschenken?"}</span>
@@ -1728,7 +1728,7 @@ body.wizrun header .eyebrow { display: block; }
   background: none; border: 0; padding: 10px 0 10px 14px; min-height: 0; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
 </style>
 <script>
-const APP_VERSION = '1.8';
+const APP_VERSION = '1.9';
 (() => {
   const updateEl = document.getElementById("update"), txt = document.getElementById("update-text"), go = document.getElementById("update-go");
   let ausTimer = null, infoTimer = null, checking = false, announced = null;
