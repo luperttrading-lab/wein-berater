@@ -1,8 +1,8 @@
 <!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1A1113">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-1-9.png"><link rel="icon" href="icon-192-1-9.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-0.png"><link rel="icon" href="icon-192-2-0.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Temperatur">
-<style>body{margin:0}[hidden]{display:none!important}</style></head><body><script>document.documentElement.dataset.theme = "dark";   // Standard: dunkel, unabhängig von der Systemeinstellung</script>
+<style>body{margin:0}[hidden]{display:none!important}</style></head><body><script>{ let t = "dark"; try { t = localStorage.getItem("wtp.theme") || "dark"; } catch (_) {} document.documentElement.dataset.theme = t; }   // Standard dunkel, Wahl wird gemerkt</script>
 <title>Wein-Temperaturplaner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -195,7 +195,14 @@ button.primary { background: var(--accent); color: var(--accent-ink); border-col
 .mode button { min-height: 36px; padding: 6px 13px; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--muted); }
 .mode button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .wiz { gap: 12px; }
-body.wizrun header .eyebrow { display: none; }
+.toprow { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px; }
+.toprow .eyebrow { margin-bottom: 0; letter-spacing: .1em; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.hdtools { display: flex; align-items: center; gap: 12px; flex: none; }
+.hdtools button { font: 600 11.5px/1 var(--f-body); letter-spacing: .06em; color: var(--muted); background: none; border: 0;
+  padding: 10px 0; margin: -10px 0; min-height: 0; cursor: pointer; }
+.themeBtn { display: inline-flex; align-items: center; gap: 5px; }
+.themeBtn { padding: 10px 4px !important; }
+.themeBtn svg { width: 16px; height: 16px; }
 body.wizrun .mode { margin-top: 8px; }
 .wiz .prog { display: flex; align-items: center; gap: 6px; font: 600 12px/1 var(--f-body); color: var(--muted); }
 .wiz .prog i { width: 22px; height: 4px; border-radius: 2px; background: var(--line-strong); }
@@ -361,7 +368,7 @@ svg.chart * { pointer-events: none; }   /* Finger/Maus treffen immer die Grafik 
 
 <main class="wrap">
   <header>
-    <div class="eyebrow">Weinberater · Temperaturplaner</div>
+    <div class="toprow"><div class="eyebrow">Weinberater · Temperaturplaner</div><span class="hdtools"><button type="button" class="themeBtn" id="themeBtn"></button></span></div>
     <h1>Pünktlich auf Trinktemperatur</h1>
     <div class="mode" role="group" aria-label="Ansicht">
       <button type="button" data-mode="wiz">Schritt für Schritt</button><button type="button" data-mode="all">Alles auf einen Blick</button>
@@ -1671,7 +1678,16 @@ function init() {
     if (open) { const [h, m] = inp.ttime.split(":").map(Number); requestAnimationFrame(() => { W.hour.set(h); W.min.set(Math.round(m / 5) * 5); $("wh-hour").focus({ preventScroll: true }); }); } };
   tb.onclick = () => openTime(tp.hidden); $("timeOk").onclick = () => { openTime(false); tb.focus(); };
   // Sockel mit Startzeit immer sichtbar
-  setInterval(() => { if (document.visibilityState === "visible" && !scrubbing) render(); }, 30000);   // nicht während des Schiebens in der Grafik
+  setInterval(() => { if (document.visibilityState === "visible" && !scrubbing) render(); }, 30000);
+  // Hell/Dunkel: der Knopf zeigt, wohin er umschaltet
+  const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>';
+  const MOON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg>';
+  const themeUi = () => { const dark = document.documentElement.dataset.theme !== "light", b = $("themeBtn");
+    b.innerHTML = dark ? SUN : MOON; b.title = dark ? "Hell" : "Dunkel"; b.setAttribute("aria-label", dark ? "Auf helle Darstellung umschalten" : "Auf dunkle Darstellung umschalten");
+    const mc = document.querySelector('meta[name="theme-color"]'); if (mc) mc.setAttribute("content", dark ? "#1A1113" : "#EADAB8"); };
+  $("themeBtn").onclick = () => { const t = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+    document.documentElement.dataset.theme = t; try { localStorage.setItem("wtp.theme", t); } catch (_) {} themeUi(); };
+  themeUi();   // nicht während des Schiebens in der Grafik
   $("secChart").addEventListener("toggle", () => { if ($("secChart").open && last) renderChart(last); });   // eingeklappt hat die Grafik keine Breite
   let rz = null; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => last && renderChart(last), 150); });
 }
@@ -1721,14 +1737,10 @@ init();
 .update.info { background: #2d2d33; color: #f2f2f7; font-weight: 500; }
 .update .btn { width: auto; min-height: 0; padding: 8px 14px; font-size: 15px; background: #06240e; color: #fff; border: 0; border-radius: 999px; }
 header { position: relative; }
-/* Versionsnummer auf der Höhe der Zeile „Weinberater · Temperaturplaner“ (gleiche Schrift, gleiche Linie);
-   die Polsterung vergrößert nur die Tippfläche, der negative Versatz gleicht sie aus */
-body.wizrun header .eyebrow { display: block; }
-.appver { position: absolute; top: -10px; right: 0; font: 600 11.5px/1 var(--f-body, system-ui); letter-spacing: .06em; color: var(--muted, #777);
-  background: none; border: 0; padding: 10px 0 10px 14px; min-height: 0; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+.appver { text-decoration: underline dotted; text-underline-offset: 3px; }
 </style>
 <script>
-const APP_VERSION = '1.9';
+const APP_VERSION = '2.0';
 (() => {
   const updateEl = document.getElementById("update"), txt = document.getElementById("update-text"), go = document.getElementById("update-go");
   let ausTimer = null, infoTimer = null, checking = false, announced = null;
@@ -1760,7 +1772,7 @@ const APP_VERSION = '1.9';
     if (manual || !tippt()) setTimeout(() => location.reload(), manual ? 1500 : 3000);
   }
   // Versionsnummer oben rechts im Kopf, in jeder Ansicht sichtbar: antippen prüft von Hand
-  const hd = document.querySelector("header");
+  const hd = document.querySelector("header .hdtools");
   if (hd) { const b = document.createElement("button"); b.type = "button"; b.className = "appver"; b.textContent = "v" + APP_VERSION;
     b.setAttribute("aria-label", "Version " + APP_VERSION + ", auf Updates prüfen"); b.addEventListener("click", () => checkForUpdate(true)); hd.append(b); }
   window.addEventListener("pageshow", () => setTimeout(checkForUpdate, 800));
