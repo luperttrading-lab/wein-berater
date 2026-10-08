@@ -1,0 +1,1768 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EADAB8" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#1A1113" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Temperatur">
+<style>body{margin:0}[hidden]{display:none!important}</style></head><body><title>Wein-Temperaturplaner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: eine Spalte wie die Weinberater-App. Ergebnis oben, Eingaben in Ablaufreihenfolge (1 Ziel, 2 Jetzt, 3 Methode),
+   Feinheiten eingeklappt mit Zusammenfassung. Sobald das Ergebnis aus dem Bild scrollt, zeigt eine Leiste unten die Startzeit. */
+:root {
+  --bg: #EADAB8; --panel: #FBF3E2; --panel-2: #F2E6CE;
+  --line: rgba(90,32,40,.24); --line-strong: rgba(90,32,40,.55);
+  --text: #3B1B23; --muted: #5A343C; --accent: #8A2435; --accent-ink: #fff; --accent-soft: rgba(138,36,53,.10);
+  --good: #2E6B4A; --warn: #8A5A00; --bad: #A12A2A; --warn-soft: rgba(176,120,0,.13); --bad-soft: rgba(161,42,42,.10);
+  --s-luft: #2a78d6; --s-karaffe: #eb6834; --s-glas: #1baf7a; --s-wasserbad: #c9a200;
+  --s-kuehlschrank: #e87ba4; --s-eis: #008300; --s-gefrier: #4a3aa7;
+  --f-display: 'Fraunces', Georgia, serif; --f-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  --f-num: 'Space Grotesk', 'Hanken Grotesk', system-ui, sans-serif;
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 6l5 5 5-5' fill='none' stroke='%238A2435' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --radius: 18px; --radius-sm: 12px; --row: 30px; --wh: 54px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1A1113; --panel: #26191C; --panel-2: #34242A;
+  --line: rgba(255,225,215,.20); --line-strong: rgba(255,225,215,.48);
+  --text: #F3E7DD; --muted: #DCC8BF; --accent: #E38393; --accent-ink: #2A0D14; --accent-soft: rgba(227,131,147,.14);
+  --good: #7CC39B; --warn: #E8B44E; --bad: #F08A8A; --warn-soft: rgba(232,180,78,.14); --bad-soft: rgba(240,138,138,.12);
+  --s-luft: #3987e5; --s-karaffe: #d95926; --s-glas: #199e70; --s-wasserbad: #e3c02a;
+  --s-kuehlschrank: #d55181; --s-eis: #2fa02f; --s-gefrier: #9085e9; --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 6l5 5 5-5' fill='none' stroke='%23E38393' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #1A1113; --panel: #26191C; --panel-2: #34242A;
+  --line: rgba(255,225,215,.20); --line-strong: rgba(255,225,215,.48);
+  --text: #F3E7DD; --muted: #DCC8BF; --accent: #E38393; --accent-ink: #2A0D14; --accent-soft: rgba(227,131,147,.14);
+  --good: #7CC39B; --warn: #E8B44E; --bad: #F08A8A; --warn-soft: rgba(232,180,78,.14); --bad-soft: rgba(240,138,138,.12);
+  --s-luft: #3987e5; --s-karaffe: #d95926; --s-glas: #199e70; --s-wasserbad: #e3c02a;
+  --s-kuehlschrank: #d55181; --s-eis: #2fa02f; --s-gefrier: #9085e9; --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 6l5 5 5-5' fill='none' stroke='%23E38393' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font: 400 15px/1.45 var(--f-body); }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 110px; display: grid; gap: 12px; }
+h1 { font: 600 clamp(24px, 6.5vw, 32px)/1.1 var(--f-display); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.eyebrow { font: 600 11.5px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; min-width: 0; display: grid; gap: 12px; }
+.step { display: flex; align-items: baseline; gap: 8px; margin: 0; font: 600 15px/1.2 var(--f-body); }
+.step .no { font: 600 12px/1 var(--f-num); color: var(--accent-ink); background: var(--accent); border-radius: 999px; width: 22px; height: 22px; display: inline-grid; place-items: center; flex: none; transform: translateY(-1px); }
+.step .val { margin-left: auto; font: 500 13px/1.2 var(--f-num); color: var(--muted); text-align: right; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Ergebnis */
+.hero { background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 10px; }
+.hero .what { font: 600 15px/1.3 var(--f-body); }
+.goal { font-size: 14.5px; line-height: 1.4; color: var(--muted); }
+.goal b { color: var(--text); font-weight: 600; }
+.goal .gh { font: 600 12.5px/1.2 var(--f-body); color: var(--muted); margin-bottom: 6px; }
+.goal .g4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.goal .gv { display: grid; grid-template-rows: auto auto; align-content: end; justify-items: center; gap: 4px; min-height: 0; margin: 0; padding: 7px 2px 9px;
+  border-radius: 12px; border: 1px solid var(--line-strong); background: var(--panel-2); text-align: center; color: var(--text); font: inherit; }
+.goal button.gv { cursor: pointer; }
+.goal .gv .sm { display: none; }
+@media (max-width: 359px) { .goal .gv .lg { display: none; } .goal .gv .sm { display: inline; } }   /* „Raumtemperatur“ nur, wo es hinpasst */
+.goal .gv small { font: 500 clamp(10px, 3vw, 11.5px)/1.15 var(--f-body); color: var(--muted); min-height: 2.3em; display: grid; align-items: end; hyphens: manual; }
+.goal .gv b { font: 700 clamp(15px, 4.9vw, 19px)/1 var(--f-num); font-variant-numeric: tabular-nums; }
+.plh { display: flex; justify-content: space-between; align-items: end; font: 600 11.5px/1 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 2px 70px 0 13px; }
+.plh .r { text-align: right; display: grid; gap: 2px; }
+.plh .r b { font: 700 13px/1.1 var(--f-body); color: var(--text); letter-spacing: .06em; }
+.plh .r small { font: 500 11px/1.2 var(--f-body); letter-spacing: .06em; color: var(--muted); }
+.m .r b { display: block; font: 600 18px/1.1 var(--f-num); }
+.psel { padding: 12px 14px 14px; display: grid; gap: 10px; background: var(--panel-2); border-radius: var(--radius-sm); }
+.psel h3 { margin: 0; font: 600 12px/1.2 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.tl { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.tl li { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; align-items: baseline; position: relative; }
+.tl li > b { font: 600 24px/1 var(--f-display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.tl li > span { font-weight: 600; font-size: 15px; line-height: 1.3; }
+.tl li > span small { display: block; font-weight: 500; font-size: 12.5px; color: var(--muted); text-wrap: pretty; }
+.tl li.span { align-items: center; min-height: 26px; }
+.tl li.span > i { justify-self: center; width: 2px; height: 26px; border-radius: 1px; background: var(--accent); opacity: .55; }
+.tl li.span > small { font: 500 12.5px/1.2 var(--f-body); color: var(--muted); }
+.ptools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ptools .primary { margin-left: auto; }
+.tog { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+.tog::after { content: " ▾"; } .tog[aria-expanded="true"]::after { content: " ▴"; }
+.sline { display: flex; flex-wrap: wrap; gap: 6px; }
+.sline button, .wsum .sline .srow { display: inline-flex; width: auto; min-height: 36px; padding: 6px 12px; font-size: 13.5px; font-weight: 600;
+  border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel-2); }
+/* Angaben als 2×2-Kacheln: kleine Zeile oben, Wert groß darunter */
+.wsum .sgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.wsum .sgrid .srow { display: grid; grid-template-columns: none; align-content: center; justify-items: start; gap: 3px; width: 100%; min-height: 60px; padding: 8px 12px;
+  border: 1px solid var(--line-strong); border-radius: 14px; background: var(--panel-2); text-align: left; }
+.wsum .sgrid .srow:last-of-type { border-bottom: 1px solid var(--line-strong); }
+.wsum .sgrid .srow small { font: 500 12.5px/1.2 var(--f-body); color: var(--muted); }
+.wsum .sgrid .srow b { font: 700 18px/1.15 var(--f-num); font-variant-numeric: tabular-nums; color: var(--text); }
+.wsum .sgrid .srow b i { font: 500 12.5px var(--f-body); font-style: normal; color: var(--muted); }
+.hero .tl li > b.time { font: 600 24px/1 var(--f-display); letter-spacing: 0; }
+.wsum { gap: 8px; padding: 12px 14px; }
+.wsum .lbl { font-size: 12px; }
+.hero .big { display: flex; align-items: center; gap: 10px; }
+.hero .big button { padding: 10px 14px; flex: none; }
+.hero .stack { display: grid; gap: 6px; justify-items: start; }
+.hero .time { font: 600 clamp(44px, 14vw, 64px)/0.95 var(--f-display); letter-spacing: -.02em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.pulse { animation: pulse .6s ease-out; }
+@keyframes pulse { 0% { background: var(--accent-soft); } 100% { background: transparent; } }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font: 600 13px/1.3 var(--f-body); background: var(--panel-2); border: 1px solid var(--line); }
+.chip.go { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.chip.late { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+.fact { border-top: 1px solid var(--line); padding-top: 6px; min-width: 0; }
+.fact b { display: block; font: 600 16px/1.2 var(--f-num); font-variant-numeric: tabular-nums; }
+.fact span { color: var(--muted); font-size: 12.5px; line-height: 1.3; display: block; }
+.note { border-radius: var(--radius-sm); padding: 9px 11px; font-size: 13.5px; background: var(--panel-2); border: 1px solid var(--line); }
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
+.steps span { display: grid; gap: 1px; }
+.steps small { color: var(--muted); font-size: 11.5px; }
+.steps b { font: 600 14.5px/1.2 var(--f-num); font-variant-numeric: tabular-nums; }
+.note.warn { background: var(--warn-soft); border-color: transparent; }
+.note.bad { background: var(--bad-soft); border-color: transparent; }
+.adv { font-size: 13px; line-height: 1.4; }
+.decRec .dw { color: var(--warn); }
+.reelw { position: relative; display: block; }
+.reel { position: absolute; inset: 1px 40px 1px 11px; display: flex; align-items: center; overflow: hidden; pointer-events: none;
+  font: 500 16px/1.2 var(--f-body); color: var(--muted); white-space: nowrap; }
+.reel span { animation: reelIn .45s ease-out; overflow: hidden; text-overflow: ellipsis; }
+@keyframes reelIn { from { transform: translateY(70%); opacity: 0; } to { transform: none; opacity: 1; } }
+select.reeling { color: transparent; }
+.reel:empty { display: none; }
+.nw { white-space: nowrap; }
+@supports (appearance: none) { .reel { background: var(--panel-2); } select.reeling { color: var(--text); } }   /* Pfeil des Felds bleibt sichtbar */
+.adv .off { color: var(--warn, var(--accent)); font-weight: 600; }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.acts .lbl, .acts small { flex-basis: 100%; }
+.opt { display: grid; gap: 4px; }
+.opt button { width: 100%; text-align: left; line-height: 1.25; border-radius: 14px; }
+.opt small { font-size: 12.5px; line-height: 1.35; }
+.opts2 { display: grid; gap: 12px; padding-top: 4px; }
+.tl b.lateT { color: var(--bad); }
+.tl em.was { font-style: normal; font-weight: 400; color: var(--bad); }
+.row-btn { display: flex; gap: 8px; flex-wrap: wrap; }
+button { font: 600 14px/1 var(--f-body); border-radius: 999px; padding: 11px 16px; border: 1px solid var(--line-strong); background: var(--panel); color: var(--text); cursor: pointer; min-height: 44px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.track { border-radius: var(--radius-sm); padding: 10px 12px; background: var(--accent-soft); display: grid; gap: 4px; }
+.lbl { font: 600 12.5px/1.2 var(--f-body); color: var(--muted); }
+
+/* Drehräder */
+.wheels { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 8px; }
+.wcol { display: grid; gap: 4px; min-width: 0; }
+.wcol .wlab { font: 600 11.5px/1.2 var(--f-body); color: var(--muted); text-align: center; }
+.wheel { position: relative; height: var(--wh); overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain;
+  border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line-strong); scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.wheel::-webkit-scrollbar { display: none; }
+.wheel .pad { height: calc((var(--wh) - var(--row)) / 2); }
+.wheel .wi.above { place-items: end center; padding-bottom: 1px; } .wheel .wi.below { place-items: start center; padding-top: 1px; }
+.wheel .wi { height: var(--row); display: grid; place-items: center; scroll-snap-align: center; font: 500 12px/1 var(--f-num);
+  font-variant-numeric: tabular-nums; color: var(--muted); opacity: .7; user-select: none; cursor: pointer; }
+.wheel .wi.sel { color: var(--text); opacity: 1; font-weight: 600; font-size: 18px; }
+.wbox { position: relative; }
+.wbox::after { content: ""; position: absolute; left: 4px; right: 4px; top: calc((var(--wh) - var(--row)) / 2); height: var(--row); border-block: 1.5px solid var(--accent); border-radius: 8px; pointer-events: none; background: var(--accent-soft); }
+/* Räder in „Alles auf einen Blick“ und im Uhrzeit-Feld: drei Zeilen ganz sichtbar, Auswahl als zwei durchgehende Linien */
+.wheels, .timepanel { --wh: 74px; --row: 30px; }
+.wheels .wcol { gap: 7px; }
+.wheels .wcol .wlab { font: 600 12px/1.2 var(--f-body); hyphens: manual; }
+.wheels { align-items: end; }   /* bricht eine Beschriftung um, bleiben die Räder trotzdem auf einer Linie */
+.wheels .wheel .wi, .timepanel .wheel .wi { font: 500 12.5px/1 var(--f-num); opacity: .6; }
+/* Nachbarzahlen klein und nah an den Linien */
+.wheels .wheel .wi.above, .timepanel .wheel .wi.above { place-items: end center; padding: 0 0 4px; }
+.wheels .wheel .wi.below, .timepanel .wheel .wi.below { place-items: start center; padding: 4px 0 0; }
+.wheels .wheel .wi.sel, .timepanel .wheel .wi.sel { font-size: 21px; font-weight: 700; opacity: 1; }
+.wheels .wbox::after, .timepanel .wbox::after { left: 0; right: 0; border-radius: 0; border-block: 1.5px solid var(--accent); border-inline: 0; background: none; }
+.wsep { align-self: end; padding-bottom: calc(var(--row) * 1.2); font: 600 20px var(--f-num); }
+
+
+/* Uhrzeit wie im iPhone-Kalender: Zeit antippen, zwei Räder klappen auf */
+.zrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: end; }
+.timebtn { height: var(--wh); width: 100%; display: grid; place-content: center; gap: 2px; border-radius: 12px; background: var(--panel-2);
+  border: 1px solid var(--line-strong); padding: 0; }
+.timebtn span { font: 600 22px/1 var(--f-num); font-variant-numeric: tabular-nums; color: var(--accent); }
+.timebtn small { font: 500 11.5px/1 var(--f-body); color: var(--muted); }
+.timebtn.big { height: 60px; grid-auto-flow: column; align-items: baseline; gap: 10px; }
+.timebtn.big span { font-size: 32px; }
+.timebtn.big small { font-size: 14px; }
+.trow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.trow .timebtn.big { height: 60px; width: auto; min-width: 116px; justify-self: end; padding: 0 16px; grid-auto-flow: row; justify-items: center; gap: 3px; }
+.trow .timebtn.big span { font-size: 28px; }
+.trow .timebtn.big small { font-size: 12px; }
+.hdet-in { display: grid; gap: 8px; padding-top: 4px; }
+.hdet-in .dl { margin: 0; font-size: 14px; line-height: 1.4; color: var(--muted); }
+.hdet-in .dl b { color: var(--text); font-weight: 600; }
+.grow { display: grid; gap: 6px; }
+#allIn, #outBox { display: contents; }
+#allIn[hidden], #outBox[hidden] { display: none; }
+.mode { display: inline-flex; gap: 2px; padding: 3px; margin-top: 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); }
+.mode button { min-height: 36px; padding: 6px 13px; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--muted); }
+.mode button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.wiz { gap: 12px; }
+body.wizrun header .eyebrow { display: none; }
+body.wizrun .mode { margin-top: 8px; }
+.wiz .prog { display: flex; align-items: center; gap: 6px; font: 600 12px/1 var(--f-body); color: var(--muted); }
+.wiz .prog i { width: 22px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+.wiz .prog i.on { background: var(--accent); }
+.wiz .q { font: 600 21px/1.25 var(--f-display); margin: 0; text-wrap: balance; }
+.wiz .sub { text-wrap: balance; }
+.wiz .sub { margin: -6px 0 0; color: var(--muted); font-size: 13.5px; }
+.choices { display: grid; gap: 8px; }
+.choices.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.choices.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.choices.c2 .choice { flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; min-height: 54px; padding: 7px 11px; font-size: 14px; overflow-wrap: break-word; hyphens: manual; }
+#wzExactBox[hidden] { display: none; }
+.choice { min-height: 56px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line-strong); font-size: 15.5px; font-weight: 600;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; text-align: left; }
+.choices.c3 .choice { flex-direction: column; justify-content: center; text-align: center; min-height: 76px; gap: 6px; }
+.choice small { font: 500 13px/1.2 var(--f-num); color: var(--muted); }
+.choice[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); background: var(--panel); }
+.choice .dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line-strong); }
+.wwheels { --row: 42px; --wh: 126px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+.wwheels .wcol { width: min(150px, 42vw); gap: 0; padding: 10px 8px 8px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--line-strong); }
+.wwheels .wlab { font: 600 11.5px/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding-bottom: 2px; }
+.wwheels .wheel { border: 0; background: transparent; border-radius: 10px; position: relative; z-index: 1; }
+.wwheels .wbox::after { z-index: 0; left: 0; right: 0; border: 1.5px solid var(--line-strong); border-radius: 10px; background: var(--panel); }
+.wwheels .wheel .wi, .wwheels .wheel .wi.above, .wwheels .wheel .wi.below { place-items: center; padding: 0; font: 500 21px/1 var(--f-num); opacity: .7; }
+.wwheels .wheel .wi.sel { font-size: 23px; font-weight: 700; opacity: 1; color: var(--text); }
+.wwheels .colon { font: 600 22px/1 var(--f-num); }
+.wnav { display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+.wnav .primary { margin-left: auto; }
+.wiz .sub:empty { display: none; }
+.wdir { font: 600 14px/1.35 var(--f-body); color: var(--accent); }
+.wsum { gap: 6px; }
+.wsum .srow { display: grid; grid-template-columns: 116px minmax(0, 1fr) auto; gap: 8px; align-items: center; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line);
+  border-radius: 0; background: transparent; padding: 8px 0; min-height: 44px; font-weight: 500; }
+.wsum .srow:last-of-type { border-bottom: 0; }
+.wsum .srow span:first-child { color: var(--muted); font-size: 13px; }
+.wsum .srow b { font-weight: 600; }
+.wsum .srow .ed { color: var(--accent); font-size: 13px; }
+body.wizrun .dock { display: none; }
+body.mwiz #s3 .no { display: none; }
+.dir { display: block; font: 600 13.5px/1.35 var(--f-body); color: var(--accent); text-wrap: pretty; }
+.timebtn[aria-expanded="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.timepanel { --wh: 74px; display: grid; grid-template-columns: 84px auto 84px auto; justify-content: center; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 14px;
+  background: var(--accent-soft); }
+.timepanel .colon { font: 600 22px/1 var(--f-num); }
+.timepanel .wheel .wi.sel { font-size: 22px; }
+.timepanel .primary { margin-left: 8px; min-height: 40px; padding: 8px 14px; }
+
+/* Formular kompakt */
+select, input[type=number] { width: 100%; font: 500 16px/1.2 var(--f-body); color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line-strong); border-radius: 10px; padding: 9px 10px; min-height: 44px; }
+input[type=number] { font-family: var(--f-num); font-variant-numeric: tabular-nums; text-align: right; }
+.frow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, 46%); gap: 10px; align-items: center; }
+.frow > label { font: 500 14px/1.25 var(--f-body); }
+.frow:has(> select) { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.frow small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; margin-top: -6px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+#t0chips, .decChips { flex-wrap: wrap; overflow: visible; }
+.decRec { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.decRec b { color: var(--text); }
+.tl .warnline { display: block; margin-top: 6px; padding: 6px 9px; border-radius: 8px; background: var(--warn-soft); color: var(--text); font: 500 13px/1.35 var(--f-body); }
+.m .sub.rec { color: var(--good); font-weight: 600; }
+.dectip { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.chips button { padding: 7px 11px; font-size: 13px; font-weight: 500; white-space: nowrap; min-height: 36px; flex: none; }
+.chips button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 44px; }
+.check input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
+.ghint { margin: -4px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.ghint:empty { display: none; }
+#glassRow { display: grid; grid-template-columns: minmax(0, 1fr) 104px; gap: 8px; }
+#glassRow .ml { position: relative; }
+#glassRow .ml input { padding-right: 34px; }
+#glassRow .ml span { position: absolute; right: 10px; top: 50%; transform: translateY(-42%); color: var(--muted); font-size: 13px; pointer-events: none; }
+#glassRow:empty { display: none; }
+
+/* Methoden */
+.methods { display: grid; gap: 6px; }
+.m { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: var(--panel-2); text-align: left; font-weight: 400; width: 100%; }
+.m[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--panel); }
+.m .key { width: 16px; height: 4px; border-radius: 2px; }
+.m .n { font-weight: 600; font-size: 14.5px; }
+.m .r { text-align: right; font: 600 14.5px/1.15 var(--f-num); font-variant-numeric: tabular-nums; }
+.m .r small { display: block; font: 500 11.5px/1.2 var(--f-body); color: var(--muted); }
+.m.late .r { color: var(--bad); }
+.m.off { opacity: .6; }
+.m:disabled { cursor: default; opacity: .45; }
+.m .sub { grid-column: 2 / 4; color: var(--muted); font-size: 12px; line-height: 1.3; }
+.m.off .r { display: none; }
+.m .r small { max-width: 96px; margin-left: auto; }
+/* Methodenzeile mit Aufklapp-Pfeil für die Einstellungen; Platz rechts immer frei, damit die Zeiten untereinander stehen */
+.mrow { position: relative; }
+.mrow > .m { padding-right: 70px; min-height: 58px; }
+.mx { position: absolute; right: 10px; top: 50%; width: 46px; height: 46px; margin-top: -23px; padding: 0; border-radius: 50%; border: 1.5px solid var(--accent);
+  background: var(--panel-2) no-repeat center/18px var(--chev); transition: transform .2s; min-height: 0; }
+.m .n { overflow-wrap: anywhere; }
+@media (max-width: 359px) { .mrow > .m { padding-right: 56px; gap: 2px 8px; } .mx { width: 40px; height: 40px; margin-top: -20px; right: 8px; }
+  .m .n { font-size: 13.5px; } .m .r b { font-size: 16px; } }
+.mx[aria-expanded="true"] { transform: rotate(180deg); background-color: var(--panel); }
+.optspanel { margin: -2px 0 4px 14px; padding: 10px 12px 12px; border-left: 2px solid var(--accent); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: var(--panel); }
+.optspanel > .lbl { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.opts { display: grid; gap: 10px; }
+.optsdet > summary { font-size: 13.5px; color: var(--text); }
+.optsdet > summary small { display: block; color: var(--muted); font-size: 12px; }
+.optsdet .opts { padding-top: 6px; }
+.more summary { list-style: none; cursor: pointer; font-size: 13px; color: var(--muted); padding: 6px 2px; min-height: 36px; display: flex; align-items: center; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::before { content: ""; width: 30px; height: 30px; flex: none; margin-right: 10px; border-radius: 50%; border: 1.5px solid var(--accent);
+  background: no-repeat center/14px var(--chev); transition: transform .2s; }
+.more[open] summary::before { transform: rotate(180deg); }
+
+/* Einklappbare Abschnitte */
+details.sec { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+details.sec > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 10px; row-gap: 2px; padding: 12px 14px; min-height: 48px; }
+details.sec > summary::-webkit-details-marker { display: none; }
+details.sec > summary .t { font: 600 15px/1.2 var(--f-body); }
+details.sec > summary .v { grid-row: 2; color: var(--muted); font: 500 12.5px/1.3 var(--f-num); text-align: left; }
+details.sec > summary::after { grid-row: 1 / 3; grid-column: 2; content: ""; width: 34px; height: 34px; flex: none; border-radius: 50%; border: 1.5px solid var(--accent);
+  background: no-repeat center/15px var(--chev); transition: transform .2s; }
+details.sec[open] > summary::after { transform: rotate(180deg); }
+details.sec .in { padding: 0 14px 14px; display: grid; gap: 10px; }
+details.sec .body p { margin: 0; }
+.formula { font: 500 14px/1.5 var(--f-num); background: var(--panel-2); border-radius: 10px; padding: 10px 12px; overflow-x: auto; white-space: nowrap; }
+.tbl { overflow-x: auto; }
+table.src { border-collapse: collapse; font-size: 13px; width: 100%; }
+table.src th, table.src td { border-bottom: 1px solid var(--line); padding: 6px 8px 6px 0; text-align: left; vertical-align: top; }
+table.src td.num { text-align: right; }
+table.src th.grp { padding-top: 12px; color: var(--accent); font-size: 12.5px; text-transform: uppercase; letter-spacing: .08em; }
+
+/* Diagramm */
+.chart-wrap { position: relative; }
+svg.chart { width: 100%; height: auto; display: block; touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+svg.chart * { pointer-events: none; }   /* Finger/Maus treffen immer die Grafik selbst – sie bleibt beim Neuzeichnen bestehen */
+.chart text { fill: var(--muted); font: 500 11px var(--f-num); }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .band { fill: var(--accent-soft); }
+.chart .tline { stroke: var(--accent); stroke-width: 1.5; }
+.chart .now { stroke: var(--text); stroke-width: 1; opacity: .55; }
+.chart .cross { stroke: var(--line-strong); stroke-width: 1; }
+/* Werte zur angetippten Zeit stehen unter der Grafik, damit nichts verdeckt wird */
+.tip { position: static; margin-bottom: 6px; min-height: 64px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12.5px; }
+.tip .wide { grid-column: 1 / -1; }
+.tip .rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 14px; }
+.tip .hint { color: var(--muted); }
+.tip .t { font: 600 13px var(--f-num); margin-bottom: 4px; }
+.tip div.l { display: flex; justify-content: space-between; gap: 12px; }
+.tip i, .legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.legend { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+.legend .late { opacity: .55; }
+.legend i.dash { background-image: repeating-linear-gradient(90deg, transparent 0 5px, var(--panel) 5px 8px); }
+
+/* Leiste unten */
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--panel); border-top: 1px solid var(--line-strong); box-shadow: 0 -10px 24px -16px rgba(0,0,0,.4); }
+.dock button { width: 100%; max-width: 736px; margin: 0 auto; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  border: 0; background: transparent; padding: 2px 4px; text-align: left; border-radius: 12px; }
+.dock .dt { font: 600 28px/1 var(--f-display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.dock .dm { font: 500 13px/1.3 var(--f-body); color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.dock .dm b { display: block; font-weight: 600; }
+.dock .up { font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<main class="wrap">
+  <header>
+    <div class="eyebrow">Weinberater · Temperaturplaner</div>
+    <h1>Pünktlich auf Trinktemperatur</h1>
+    <div class="mode" role="group" aria-label="Ansicht">
+      <button type="button" data-mode="wiz">Schritt für Schritt</button><button type="button" data-mode="all">Alles auf einen Blick</button>
+    </div>
+  </header>
+
+  <section class="card wiz" id="wiz" aria-live="polite" hidden></section>
+  <section class="card wsum" id="wsum" hidden></section>
+
+  <div id="allIn">
+
+  <section class="card" aria-labelledby="s1">
+    <div class="trow"><h2 class="step" id="s1"><span class="no">1</span>Einschenken um</h2>
+    <button type="button" class="timebtn big" id="timeBtn" aria-expanded="false" aria-controls="timePanel"><span id="timeVal">19:00</span><small id="timeDay">heute</small></button></div>
+    <div class="timepanel" id="timePanel" hidden>
+      <div class="wcol" id="w-hour"></div><span class="colon" aria-hidden="true">:</span><div class="wcol" id="w-min"></div>
+      <button type="button" class="primary" id="timeOk">Fertig</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="s2">
+    <h2 class="step" id="s2"><span class="no">2</span>Wein<span class="val" id="sumTarget"></span></h2>
+    <select id="wine" aria-label="Wein (Trinktemperatur aus dem Kompendium)"><option value="">Rebsorte wählen (optional)</option></select>
+    <div class="wheels" style="--n:3">
+      <div class="wcol" id="w-target"></div>
+      <div class="wcol" id="w-T0"></div>
+      <div class="wcol" id="w-Tair"></div>
+    </div>
+    <p class="sub adv" id="advAll" style="margin:0"></p>
+    <div class="chips" id="t0chips" role="group" aria-label="Wein kommt aus"></div>
+    <div id="decAll" class="grow"></div>
+  </section>
+  </div>
+
+  <div id="outBox">
+  <section class="hero" id="hero"></section>
+  <div class="sr-only" aria-live="polite" id="live"></div>
+
+  <div id="optsHome" hidden><div class="optspanel" id="optsPanel"><span class="lbl" id="optsLbl">Einstellungen</span><div class="opts" id="opts"></div></div></div>
+
+  <details class="sec" id="secChart">
+    <summary><span class="t">Verlauf als Grafik</span><span class="v">alle Methoden im Vergleich</span></summary>
+    <div class="in">
+    <div class="tip" id="tip" aria-live="polite"></div>
+    <div class="chart-wrap" id="chartWrap"><svg class="chart" id="chart" viewBox="0 0 680 260" role="img" aria-label="Temperaturverlauf der Methoden"></svg>
+      </div>
+    <div class="legend" id="legend"></div>
+    <p class="muted" id="chartNote" style="margin:0;font-size:12.5px">Dicke Linie: deine Methode. Gestrichelt: schafft es nicht pünktlich, ab jetzt gerechnet. <span id="chartWhite"></span> Helles Band: Ziel ± 1 °C.</p>
+  </div>
+  </details>
+
+  <details class="sec" id="secGlass">
+    <summary><span class="t">Glas und Einschenken</span><span class="v" id="sumGlass"></span></summary>
+    <div class="in">
+      <label class="check"><input type="checkbox" id="inGlass">Temperatur gilt für den Wein im Glas (empfohlen)</label>
+      <div id="glassRow"></div>
+      <p class="ghint" id="glassHint"></p>
+    </div>
+  </details>
+
+  <details class="sec" id="secEnv">
+    <summary><span class="t">Raum und Umgebung</span><span class="v" id="sumEnv"></span></summary>
+    <div class="in">
+      <div class="frow"><label for="rh">Luftfeuchte in %</label><input id="rh" type="number" step="5" min="10" max="95" inputmode="numeric"><small id="dewHint"></small></div>
+      <div class="frow"><label for="airflow">Luftbewegung</label><select id="airflow"></select></div>
+      <div class="frow"><label for="surface">Standfläche</label><select id="surface"></select></div>
+    </div>
+  </details>
+
+  <details class="sec" id="secBottle">
+    <summary><span class="t">Flasche und Wein</span><span class="v" id="sumBottle"></span></summary>
+    <div class="in">
+      <div class="frow"><label for="bottle">Flasche</label><select id="bottle"></select></div>
+      <div class="frow"><label for="vol">Weinmenge, Liter</label><input id="vol" type="number" step="0.05" min="0.1" inputmode="decimal"><small>Bei angebrochener Flasche die Restmenge.</small></div>
+      <div class="frow"><label for="bottleMass">Gewicht der leeren Flasche (g)</label><input id="bottleMass" type="number" step="10" inputmode="numeric"><small>Standard um 500 g, schwere Premiumflaschen 900–1200 g. Schwere Flaschen brauchen länger.</small></div>
+      <div class="frow"><label for="abv">Alkohol % vol</label><input id="abv" type="number" step="0.5" min="0" max="20" inputmode="decimal"></div>
+    </div>
+  </details>
+
+  <details class="sec" id="secCal">
+    <summary><span class="t">Mit Thermometer nachjustieren</span><span class="v" id="sumCal"></span></summary>
+    <div class="in">
+      <p class="muted" style="margin:0;font-size:13.5px">Miss nach einer Weile die Temperatur des Weins und trag sie hier ein. Der Planer rechnet dann genauer und merkt sich das auf diesem Gerät.</p>
+      <div class="frow"><label for="calMin">Gemessen nach Minuten</label><input id="calMin" type="number" step="1" min="1" inputmode="numeric" placeholder="30"></div>
+      <div class="frow"><label for="calT">Gemessen °C</label><input id="calT" type="number" step="0.1" inputmode="decimal" placeholder="10,5"></div>
+      <div class="row-btn"><button type="button" class="primary" id="calGo">Übernehmen</button><button type="button" id="calReset">Zurücksetzen</button></div>
+      <p id="calOut" class="muted" style="margin:0;font-size:13px"></p>
+    </div>
+  </details>
+
+  <details class="sec">
+    <summary><span class="t">So rechnet der Planer</span></summary>
+    <div class="in body" style="font-size:14px">
+      <p>Wein und Gefäßglas werden als ein Körper mit gemeinsamer Temperatur <i>T</i> gerechnet. Die Wärme, die pro Sekunde hineinfließt, ändert seine Temperatur:</p>
+      <div class="formula">(m<sub>Wein</sub>·c<sub>Wein</sub> + m<sub>Glas</sub>·c<sub>Glas</sub>) · dT/dt = Σ Q̇</div>
+      <p>Σ Q̇ enthält: Konvektion der Raumluft an der Glaswand (Churchill-Chu, mit Luftzug zusätzlich Churchill-Bernstein), Wärmestrahlung der Raumwände (ε = 0,9), Kondensation von Luftfeuchte auf der kalten Flasche und ihre spätere Verdunstung, Wärmeleitung aus der Standfläche, beim offenen Gefäß den Weinspiegel samt Verdunstung von Wasser und Alkohol. Das Wasserbad wird mit zwei Körpern gerechnet, weil das Badwasser selbst abkühlt.</p>
+      <p>Der Wärmeübergang hängt vom Temperaturunterschied ab und wird in jedem Rechenschritt (2 bis 6 Sekunden) neu bestimmt. Kurz vor dem Ziel wird die Erwärmung deshalb langsamer als eine reine e-Funktion.</p>
+      <p>Beim Umfüllen mischt sich die Temperatur von Wein und Gefäß sofort: Eine Karaffe mit 900 g Glas bei Raumtemperatur hebt 0,75 l Wein von 6 auf etwa 10 °C.</p>
+      <p><b>Erwärmen</b> (Flasche hinstellen, Karaffe, Gläser, lauwarmes Wasserbad): Der Raum oder das Wasser gibt Wärme an den Wein ab. Am schnellsten geht es im lauwarmen Wasserbad, am schonendsten und langsamsten an der Luft. Eine kalte Flasche beschlägt; das kondensierende Wasser bringt zusätzlich Wärme.</p>
+      <p><b>Abkühlen</b> (Kühlschrank, Gefrierfach, Eiskübel, kaltes Wasserbad): Am schnellsten ist <b>Eiswasser</b>, nicht das Gefrierfach. Wasser liegt dicht an der Flasche an und nimmt Wärme viel besser auf als Luft, auch wenn die Luft im Gefrierfach −18 °C kalt ist. Eiswürfel allein ohne Wasser kühlen schlecht, weil sie die Flasche nur an wenigen Punkten berühren.</p>
+      <p><b>Eis mit Salz.</b> Salz senkt den Gefrierpunkt des Wassers. Das Eis schmilzt weiter und holt sich die Schmelzwärme aus der Lake, bis sie den Gefrierpunkt der Salzlösung erreicht hat. So wird Eiswasser kälter als 0 °C. Am tiefsten kommt man mit Kochsalz bis −21,1 °C, bei 23,3 % Salz (etwa 300 g pro Liter Wasser). Das gilt nur, solange noch Eis da ist und umgerührt wird; im Kübel ist es meist 1–3 °C wärmer. Der Wein selbst gefriert bei etwa −5 °C, deshalb nicht vergessen.</p>
+      <div class="tbl"><table class="src"><thead><tr><th>Salz pro Liter Wasser</th><th>Massenanteil</th><th>Lake (Gleichgewicht)</th></tr></thead><tbody id="brine"></tbody></table></div>
+      <p><b>Genauigkeit.</b> Die Spanne entspricht einem Wärmeübergang 20 % schwächer bis 25 % stärker als gerechnet. Größte Unsicherheiten: die tatsächliche Kühlschranktemperatur, Luftbewegung, Form und Gewicht von Flasche und Karaffe. Eine Thermometermessung eicht den Planer auf die eigenen Verhältnisse.</p>
+      <p><b>Abgleich mit Literaturwerten</b></p>
+      <div class="tbl"><table class="src"><thead><tr><th>Fall</th><th>Literatur</th><th>Planer</th></tr></thead><tbody id="valid"></tbody></table></div>
+      <p class="muted">Quellen: Decanter (Ask Decanter) „How long to reach the wine perfect temperature?“ und „How to chill wine quickly“ sowie Ratgeberwerte von Weinhändlern. Faustwerte, keine Laborreihen. Beim Kühlen in Kühlschrank und Gefrierfach rechnet der Planer eher vorsichtig. Gefrierpunkte der Salzlake: CRC Handbook of Chemistry and Physics, Tabelle der Konzentrationseigenschaften wässriger Lösungen.</p>
+    </div>
+  </details>
+  </div>
+</main>
+
+<div class="dock" id="dock"><button type="button" id="dockBtn" aria-label="Zum Ergebnis"><span class="dt" id="dockT"></span><span class="dm" id="dockM"></span><span class="up" aria-hidden="true">▲</span></button></div>
+
+<script>
+// Wein-Temperatur-Modell: konzentrierte Wärmekapazität (Wein + Gefäßglas) mit
+// temperaturabhängigen Wärmeübergängen (Konvektion, Strahlung, Kondensation/Verdunstung,
+// Standflächen-Kontakt) bzw. Zwei-Knoten-Modell für Wasser-/Eisbäder.
+const M = (() => {
+  const SIG = 5.670374e-8, G = 9.81, CP_AIR = 1006, L_V = 2.47e6, L_E = 0.92e6;
+  const C_WINE = 4000, RHO_WINE = 0.99, C_GLASS = 840, K_GLASS = 1.0, RHO_GLASS = 2500;
+
+  const air = T => ({ k: 0.0241 + 7.5e-5 * T, nu: 1.33e-5 + 9.0e-8 * T, Pr: 0.71,
+    beta: 1 / (T + 273.15), rho: 101325 / (287.05 * (T + 273.15)) });
+  const water = T => { const t = Math.max(T, 0);
+    const nu = 1.79e-6 / (1 + 0.0337 * t + 0.000221 * t * t), alpha = 1.33e-7 * (1 + 0.0036 * t);
+    return { k: 0.561 + 0.00185 * t, nu, alpha, Pr: nu / alpha }; };
+  const rhoW = T => 1000 * (1 - 6.8e-6 * (T - 4) ** 2);
+  const psat = T => 611.2 * Math.exp(17.62 * T / (243.12 + T));              // Pa (Magnus)
+  const rhoV = (p, T) => p / (461.5 * (T + 273.15));                         // kg/m³
+  const pEth = T => 133.322 * 10 ** (8.20417 - 1642.89 / (230.3 + T));        // Pa (Antoine)
+
+  const nuVert = (Ra, Pr) => (0.825 + 0.387 * Ra ** (1 / 6) / (1 + (0.492 / Pr) ** (9 / 16)) ** (8 / 27)) ** 2;
+  const nuCyl = (Re, Pr) => 0.3 + 0.62 * Re ** 0.5 * Pr ** (1 / 3) / (1 + (0.4 / Pr) ** (2 / 3)) ** 0.25
+    * (1 + (Re / 282000) ** (5 / 8)) ** (4 / 5);
+
+  // Konvektion Luft an senkrechter Fläche (Höhe L), optional Querströmung v um Zylinder D
+  function hAir(Ts, Ta, L, D, v) {
+    const p = air((Ts + Ta) / 2), dT = Math.abs(Ta - Ts) + 1e-3, a = p.nu / p.Pr;
+    const hn = nuVert(G * p.beta * dT * L ** 3 / (p.nu * a), p.Pr) * p.k / L;
+    if (!v) return hn;
+    const hf = nuCyl(v * D / p.nu, p.Pr) * p.k / D;
+    return Math.cbrt(hn ** 3 + hf ** 3);
+  }
+  // freie, nach oben weisende Fläche (Weinspiegel), Lc = A/Umfang
+  function hAirUp(Ts, Ta, Lc) {
+    const p = air((Ts + Ta) / 2), dT = Math.abs(Ta - Ts) + 1e-3, a = p.nu / p.Pr;
+    const Ra = G * p.beta * dT * Lc ** 3 / (p.nu * a);
+    const Nu = Ts > Ta ? (Ra < 1e7 ? 0.54 * Ra ** 0.25 : 0.15 * Ra ** (1 / 3)) : 0.27 * Ra ** 0.25;
+    return Math.max(Nu, 1) * p.k / Lc;
+  }
+  function hWater(Ts, Tw, L) {
+    const p = water((Ts + Tw) / 2), drho = Math.abs(rhoW(Ts) - rhoW(Tw)) / 1000 + 1e-7;
+    return nuVert(G * drho * L ** 3 / (p.nu * p.alpha), p.Pr) * p.k / L;
+  }
+  const hRad = (Ts, Ta, eps) => { const a = Ts + 273.15, b = Ta + 273.15; return eps * SIG * (a * a + b * b) * (a + b); };
+
+  // ------------------------------------------------------------- Geometrie
+  const BOTTLES = {
+    bordeaux: { name: "Bordeauxflasche 0,75 l", V: 0.75, D: 0.076, H: 0.205, Atop: 0.0135, m: 0.50 },
+    burgund: { name: "Burgunderflasche 0,75 l", V: 0.75, D: 0.082, H: 0.17, Atop: 0.016, m: 0.55 },
+    schlegel: { name: "Schlegelflasche 0,75 l", V: 0.75, D: 0.074, H: 0.17, Atop: 0.028, m: 0.45 },
+    halb: { name: "Halbe Flasche 0,375 l", V: 0.375, D: 0.060, H: 0.15, Atop: 0.009, m: 0.30 },
+    liter: { name: "Literflasche 1,0 l", V: 1.0, D: 0.080, H: 0.225, Atop: 0.015, m: 0.55 },
+    magnum: { name: "Magnum 1,5 l", V: 1.5, D: 0.102, H: 0.235, Atop: 0.022, m: 0.90 },
+  };
+  // Geometrie (Füllhöhe, benetzte Fläche) aus dem Normgewicht des Flaschentyps b.m0; das tatsächliche
+  // Gewicht b.m zählt als Wärmekapazität und Wanddicke. Sonst würde eine schwerere Flasche den Wein
+  // rechnerisch höher in die Schulter drücken und schneller statt langsamer werden.
+  function bottleGeom(b, Vwine) {
+    const Aglass = Math.PI * b.D * b.H + Math.PI * b.D ** 2 / 4 + b.Atop;
+    const tg = Math.min(0.006, Math.max(0.002, (b.m0 || b.m) / (RHO_GLASS * Aglass)));
+    const t = Math.min(0.012, Math.max(0.002, b.m / (RHO_GLASS * Aglass)));
+    const rin = b.D / 2 - tg, Vbody = Math.PI * rin * rin * b.H, h = Math.min(Vwine / (Math.PI * rin * rin), b.H);
+    const Abot = Math.PI * b.D ** 2 / 4, Aside = Math.PI * b.D * h;
+    const fTop = Math.max(0, Math.min(1, (Vwine - Vbody) / Math.max(1e-6, b.V / 1000 * 1.04 - Vbody)));
+    const Atot = Math.PI * b.D * b.H + Abot + b.Atop;
+    const Awet = Aside + Abot * 0.75 + b.Atop * fTop;          // Boden: Ring steht auf, Rest Luftspalt
+    return { t, h: Math.max(h, 0.02), D: b.D, Awet, Adry: Atot - Awet - Abot * 0.25, Abase: Abot * 0.25,
+      fBase: 1, Afree: 0, mg: b.m, eta: 0.35 };
+  }
+  const DECANTERS = {
+    breit: { name: "Breiter Dekanter (Boden Ø 22 cm)", Db: 0.22, m: 0.90, Adome: 0.10, fBase: 0.7, shelter: 0.5 },
+    karaffe: { name: "Karaffe / Krug (Ø 12 cm)", Db: 0.12, m: 0.60, Adome: 0.045, fBase: 0.5, shelter: 0.7 },
+    schlank: { name: "Schlanke Karaffe (Ø 9 cm)", Db: 0.09, m: 0.45, Adome: 0.035, fBase: 0.5, shelter: 0.7 },
+  };
+  function decanterGeom(d, Vwine) {
+    const t = 0.003, rin = d.Db / 2 - t, h = Vwine / (Math.PI * rin * rin), Ab = Math.PI * d.Db ** 2 / 4;
+    return { t, h: Math.max(h, 0.015), D: d.Db, Awet: Math.PI * d.Db * h, Adry: d.Adome, Abase: Ab * d.fBase,
+      fBase: 1, Afree: Math.PI * rin * rin, Lfree: rin / 2, shelter: d.shelter, mg: d.m, eta: 0.15 };
+  }
+  const GLASSES = {
+    bordeaux: { name: "Bordeauxglas (Kelch Ø 9 cm)", Dk: 0.09, m: 0.20, Hb: 0.11 },
+    burgund: { name: "Burgunderglas (Kelch Ø 11 cm)", Dk: 0.11, m: 0.22, Hb: 0.11 },
+    klein: { name: "Kleines Weinglas (Kelch Ø 7,5 cm)", Dk: 0.075, m: 0.15, Hb: 0.09 },
+  };
+  function glassGeom(g, Vwine) {
+    const t = 0.0015, r = g.Dk * 0.85 / 2, h = Vwine / (Math.PI * r * r);
+    return { t, h: Math.max(h, 0.01), D: g.Dk, Awet: Math.PI * 2 * r * h + Math.PI * r * r * 1.2,
+      Adry: Math.PI * g.Dk * Math.max(0, g.Hb - h), Abase: 0, fBase: 0, Afree: Math.PI * r * r, Lfree: r / 2,
+      shelter: 0.6, mg: g.m * 0.6, eta: 0.2 };
+  }
+  const SURFACES = { holz: { name: "Holztisch", e: 400 }, stein: { name: "Stein / Marmor", e: 2500 },
+    glas: { name: "Glastisch", e: 1400 }, metall: { name: "Edelstahl", e: 6000 }, stoff: { name: "Tuch / Untersetzer", e: 80 } };
+  const AIRFLOW = { still: { name: "Still", v: 0 }, zug: { name: "Leichter Luftzug", v: 0.3 }, vent: { name: "Ventilator", v: 1.5 } };
+
+  // ------------------------------------------------------------- Simulation
+  // s: Szenario (siehe build()), liefert Funktion step(state, dt)
+  function simulate(s, opts) {
+    const { Ttarget, tmax = 24 * 3600, kH = 1, record = false, extra = 1.0 } = opts;
+    const Cw = s.Vwine * RHO_WINE * C_WINE, Cg = s.g.mg * C_GLASS;
+    let T = (Cw * s.T0 + Cg * s.Tg0) / (Cw + Cg);                // Mischung beim Umfüllen
+    const T0mix = T;
+    const C = Cw + Cg, Rg = s.g.t / K_GLASS;
+    let Tb = s.bath ? s.bath.T0 : null, film = 0, t = 0;
+    const xE = (() => { const eth = s.abv * 789, w = 990 - eth - 25; const ne = eth / 46.07, nw = w / 18.015; return ne / (ne + nw); })();
+    const pts = record ? [[0, T]] : null;
+    const goingUp = Ttarget > s.T0;
+    let tHit = null, tPlus1 = null, tMinus1 = null;
+    const Tlimit = goingUp ? Ttarget + 1 : Ttarget - 1;
+
+    function flux(T, Tb, t) {
+      let Q = 0, mflux = 0;
+      if (!s.bath) {
+        const Ta = s.Tair, hin = 150;
+        // Außenfläche am Wein
+        let Ts = T, ho = 0;
+        for (let i = 0; i < 2; i++) {
+          ho = kH * (hAir(Ts, Ta, s.g.h, s.g.D, s.v) + hRad(Ts, Ta, 0.9));
+          const U = 1 / (1 / ho + Rg + 1 / hin);
+          Ts = T + (Ta - T) * U * (Rg + 1 / hin);
+        }
+        const Uw = 1 / (1 / ho + Rg + 1 / hin);
+        Q += s.g.Awet * Uw * (Ta - T);
+        // trockene Glasflächen (Hals, Kuppel, oberer Kelch)
+        Q += s.g.eta * s.g.Adry * ho * (Ta - T);
+        // Kondensation / Wiederverdunstung an der Außenfläche
+        const hc = kH * hAir(Ts, Ta, s.g.h, s.g.D, s.v);
+        const hm = hc / (air(Ta).rho * CP_AIR) * 1.12;
+        const dRho = rhoV(s.rh * psat(Ta), Ta) - rhoV(psat(Ts), Ts);
+        let m = hm * dRho * (s.g.Awet + s.g.eta * s.g.Adry);   // kg/s, >0 Kondensation
+        if (m < 0 && film <= 0) m = 0;
+        Q += m * L_V; mflux = m;
+        // Standfläche (instationäre Wärmeleitung in den Tisch)
+        if (s.g.Abase > 0 && s.surface) {
+          const hc0 = s.surface.e / Math.sqrt(Math.PI * (t + 60));
+          Q += s.g.Abase * (1 / (1 / hc0 + 0.004 + Rg + 1 / hin)) * (s.Tsurf - T);
+        }
+        // freier Weinspiegel (Karaffe, Glas)
+        if (s.g.Afree > 0) {
+          const hf = kH * hAirUp(T, Ta, s.g.Lfree) * s.g.shelter;
+          Q += s.g.Afree * (hf + hRad(T, Ta, 0.95)) * (Ta - T);
+          const hmW = hf / (air(Ta).rho * CP_AIR) * 1.12, hmE = hf / (air(Ta).rho * CP_AIR) * 0.686;
+          Q += hmW * (rhoV(s.rh * psat(Ta), Ta) - rhoV(0.98 * psat(T), T)) * s.g.Afree * L_V;   // Wasser
+          Q -= hmE * (pEth(T) * xE * 3.5 * 0.046 / (8.314 * (T + 273.15))) * s.g.Afree * L_E;      // Ethanol
+        }
+        return { Q, mflux, Qb: 0 };
+      }
+      // Bad (Wasser / Eiswasser)
+      const B = s.bath;
+      let hw, hin;
+      if (B.stir) { hw = 600; hin = 400; }
+      else { hw = hWater(T + (Tb - T) * 0.33, Tb, s.g.h); hin = Math.max(60, hWater(T, T + (Tb - T) * 0.33, s.g.h)); }
+      hw *= kH;
+      const U = 1 / (1 / hw + Rg + 1 / hin);
+      Q += B.Asub * U * (Tb - T);
+      // Flaschenteil über Wasser (Luft)
+      const ha = kH * (hAir(T, s.Tair, 0.08, s.g.D, 0) + hRad(T, s.Tair, 0.9));
+      Q += B.Aabove * 0.35 * ha * (s.Tair - T);
+      const Qb = -B.Asub * U * (Tb - T) + B.UAair * (s.Tair - Tb);
+      return { Q, mflux: 0, Qb };
+    }
+
+    const dt = s.bath ? 2 : (s.Vwine < 0.3 ? 3 : 6);
+    const tStop = opts.tStop, until = opts.recordUntil || 0, step = opts.recordStep || 60;
+    let nextRec = step;
+    while (t < tmax) {
+      const f1 = flux(T, Tb, t);
+      const T1 = T + f1.Q / C * dt, Tb1 = s.bath && !s.bath.fixed ? Tb + f1.Qb / s.bath.C * dt : Tb;
+      const f2 = flux(T1, Tb1, t + dt);
+      const Tn = T + 0.5 * (f1.Q + f2.Q) / C * dt;
+      if (s.bath && !s.bath.fixed) Tb = Tb + 0.5 * (f1.Qb + f2.Qb) / s.bath.C * dt;
+      film = Math.max(0, film + 0.5 * (f1.mflux + f2.mflux) * dt);
+      const cross = (lvl) => (goingUp ? (T < lvl && Tn >= lvl) : (T > lvl && Tn <= lvl)) ? t + dt * (lvl - T) / (Tn - T) : null;
+      if (tMinus1 === null) tMinus1 = cross(goingUp ? Ttarget - 1 : Ttarget + 1);
+      if (tHit === null) tHit = cross(Ttarget);
+      if (tHit !== null && tPlus1 === null) tPlus1 = cross(Tlimit);
+      if (tStop !== undefined && t + dt >= tStop) { const T_at = T + (Tn - T) * (tStop - t) / dt; return { T_at, tHit, Tmix: T0mix, film }; }
+      T = Tn; t += dt;
+      if (record && t >= nextRec) { pts.push([t, T]); nextRec += step; }
+      const doneRec = !record || t >= until;
+      if (tStop === undefined && doneRec && tHit !== null && (!opts.needWindow || tPlus1 !== null)) break;
+    }
+    if (tMinus1 === null && tHit !== null) tMinus1 = 0;          // Start lag schon im Fenster
+    return { tHit, tPlus1, tMinus1, Tmix: T0mix, pts, Tend: T, film, goingUp };
+  }
+
+  // Szenario aus Eingaben
+  function build(inp, method) {
+    const Vwine = inp.vol;                                   // l Wein (Füllmenge)
+    const base = { T0: inp.T0, Tair: inp.Tair, rh: inp.rh / 100, v: AIRFLOW[inp.airflow].v, abv: inp.abv / 100,
+      Vwine, surface: SURFACES[inp.surface], Tsurf: inp.Tair };   // Vwine in Litern
+    const bottle = Object.assign({}, BOTTLES[inp.bottle], { m0: BOTTLES[inp.bottle].m }, inp.bottleMass ? { m: inp.bottleMass } : {});
+    const s = Object.assign({}, base);
+    switch (method) {
+      case "luft": s.g = bottleGeom(bottle, Vwine / 1000); s.Tg0 = inp.T0; break;
+      case "karaffe": { const d = Object.assign({}, DECANTERS[inp.decanter], inp.decMass ? { m: inp.decMass } : {});
+        s.g = decanterGeom(d, Vwine / 1000); s.Tg0 = inp.preheat ? inp.preheatT : inp.Tair; break; }
+      case "glas": { const g = GLASSES[inp.glass]; s.Vwine = inp.glassVol / 1000; s.g = glassGeom(g, inp.glassVol / 1e6);
+        s.Tg0 = inp.preheat ? inp.preheatT : inp.Tair; s.surface = null; break; }
+      case "kuehlschrank": s.g = bottleGeom(bottle, Vwine / 1000); s.Tg0 = inp.T0; s.Tair = inp.Tfridge;
+        s.v = inp.fridgeFan ? 0.3 : 0; s.rh = 0.5; s.surface = SURFACES.glas; s.Tsurf = inp.Tfridge; break;
+      case "gefrier": s.g = bottleGeom(bottle, Vwine / 1000); s.Tg0 = inp.T0; s.Tair = inp.Tfreezer;
+        s.v = 0.4; s.rh = 0.0; s.surface = SURFACES.stoff; s.Tsurf = inp.Tfreezer; break;
+      case "wasserbad": case "eis": {
+        const g = bottleGeom(bottle, Vwine / 1000); s.g = g; s.Tg0 = inp.T0;
+        const Asub = Math.PI * g.D * Math.min(g.h + 0.02, bottle.H) + Math.PI * g.D ** 2 / 4;
+        const Aall = Math.PI * g.D * bottle.H + Math.PI * g.D ** 2 / 4 + bottle.Atop;
+        if (method === "wasserbad") s.bath = { T0: inp.Tbath, C: inp.bathVol * 4186, UAair: 3, Asub, Aabove: Aall - Asub, stir: inp.stir, fixed: false };
+        else s.bath = { T0: inp.salt ? inp.Tsalt : 0, C: 1e12, UAair: 0, Asub, Aabove: Aall - Asub, stir: inp.stir, fixed: true };
+        break; }
+    }
+    return s;
+  }
+  return { simulate, build, BOTTLES, DECANTERS, GLASSES, SURFACES, AIRFLOW, psat };
+})();
+if (typeof module !== "undefined") module.exports = M;
+
+const WINES = [["Rot","Spätburgunder",14,16],["Rot","Merlot",16,18],["Rot","Cabernet Sauvignon",16,18],["Rot","Syrah / Shiraz",15,17],["Rot","Syrah Barrique",16,18],["Rot","Malbec",16,18],["Rot","Tempranillo",15,17],["Rot","Tempranillo Reserva",16,18],["Rot","Sangiovese",16,18],["Rot","Nebbiolo",16,18],["Rot","Grenache",16,18],["Rot","Zinfandel",16,18],["Rot","Dornfelder",14,16],["Rot","Lemberger",16,18],["Rot","Montepulciano",16,18],["Rot","Cabernet Franc",15,17],["Rot","Gamay",13,15],["Rot","Barbera",16,18],["Rot","Mourvèdre",16,18],["Rot","Carménère",16,18],["Rot","Touriga Nacional",16,18],["Rot","Tannat",16,18],["Rot","Pinotage",16,18],["Rot","Zweigelt",15,17],["Rot","Aglianico",16,18],["Rot","Nero d'Avola",16,18],["Rot","Corvina",15,17],["Rot","Petit Verdot",16,18],["Rot","Mencía",15,17],["Rot","Carignan",16,18],["Rot","Trollinger",14,16],["Rot","Portugieser",14,16],["Rot","Lagrein",16,18],["Rot","Sankt Laurent",15,17],["Rot","Frühburgunder",14,16],["Rot","Schwarzriesling",14,16],["Rot","Dolcetto",15,17],["Rot","Negroamaro",16,18],["Rot","Cinsault",14,16],["Rot","Sagrantino",16,18],["Rot","Frappato",12,14],["Rot","Nerello Mascalese",14,16],["Rot","Regent",15,17],["Rot","Bobal",15,17],["Rot","Lambrusco Amabile",8,10],["Rot","Dornfelder lieblich",12,14],["Rot","Schwarzriesling lieblich",12,14],["Rot","Trollinger lieblich",12,14],["Rot","Zweigelt halbtrocken",14,16],["Weiß","Riesling trocken",8,10],["Weiß","Riesling lieblich",8,10],["Weiß","Chardonnay",9,11],["Weiß","Chardonnay Barrique",11,13],["Weiß","Sauvignon Blanc",8,10],["Weiß","Grauburgunder",9,11],["Weiß","Weißburgunder",9,11],["Weiß","Müller-Thurgau",8,10],["Weiß","Silvaner",9,11],["Weiß","Gewürztraminer",10,12],["Weiß","Gewürztraminer lieblich",8,10],["Weiß","Grüner Veltliner",8,10],["Weiß","Muskateller",7,9],["Weiß","Chenin Blanc",9,11],["Weiß","Viognier",10,12],["Weiß","Albariño",8,10],["Weiß","Scheurebe",8,10],["Weiß","Kerner",8,10],["Weiß","Vermentino",8,10],["Weiß","Sémillon",10,12],["Weiß","Garganega",9,11],["Weiß","Verdejo",8,10],["Weiß","Godello",10,12],["Weiß","Assyrtiko",9,11],["Weiß","Furmint",9,11],["Weiß","Grenache Blanc",10,12],["Weiß","Marsanne",10,12],["Weiß","Roussanne",10,12],["Weiß","Torrontés",7,9],["Weiß","Fiano",9,11],["Weiß","Auxerrois",9,11],["Weiß","Elbling",7,9],["Weiß","Gutedel",8,10],["Weiß","Huxelrebe",8,10],["Weiß","Ortega",8,10],["Weiß","Picpoul de Pinet",7,9],["Weiß","Falanghina",8,10],["Weiß","Greco",9,11],["Weiß","Vernaccia",8,10],["Weiß","Trebbiano",7,9],["Weiß","Vinho Verde",6,8],["Weiß","Verdicchio",9,11],["Weiß","Savagnin",13,15],["Weiß","Solaris",8,10],["Weiß","Bacchus",8,10],["Rosé","Provence-Rosé",8,10],["Rosé","Spätburgunder Rosé",8,10],["Rosé","Tavel",10,12],["Rosé","Cerasuolo d'Abruzzo",10,12],["Rosé","Negroamaro Rosato",10,12],["Rosé","White Zinfandel",6,8],["Rosé","Rosé d'Anjou",7,9],["Rosé","Bandol Rosé",10,12],["Rosé","Garnacha Rosado",8,10],["Rosé","Tempranillo Rosado",8,10],["Rosé","Bardolino Chiaretto",7,9],["Rosé","Syrah-Rosé",9,11],["Rosé","Schilcher",7,9],["Rosé","Schillerwein",8,10],["Rosé","Badisch Rotgold",8,10],["Rosé","Txakoli Rosado",6,8],["Rosé","Kretzer",9,11],["Rosé","Portugal-Rosado",6,8],["Rosé","Clairet",11,13],["Rosé","Œil de Perdrix",8,10],["Rosé","Muskat-Rosé",8,10]];
+// ----------------------------------------------------------------- Zustand
+const METHODS = {
+  luft:        { name: "Flasche hinstellen",  up: "Flasche herausnehmen und hinstellen", down: "Flasche an einen kühleren Ort stellen", fam: "air", amb: i => i.Tair, ambLabel: "Raum" },
+  karaffe:     { name: "In die Karaffe",      up: "In die Karaffe umfüllen",       down: "In die Karaffe umfüllen",       fam: "air", amb: i => i.Tair, ambLabel: "Raum" },
+  glas:        { name: "In die Gläser",       up: "In die Gläser einschenken",     down: "In die Gläser einschenken",     fam: "air", amb: i => i.Tair, ambLabel: "Raum" },
+  wasserbad:   { name: "Wasserbad",           up: "Flasche ins Wasserbad stellen", down: "Flasche ins kalte Wasserbad stellen", fam: "water", amb: i => i.Tbath, ambLabel: "Wasser" },
+  kuehlschrank:{ name: "Kühlschrank",         up: "In den Kühlschrank legen",      down: "In den Kühlschrank legen",      fam: "air", amb: i => i.Tfridge, ambLabel: "Kühlschrank" },
+  gefrier:     { name: "Gefrierfach",         up: "Ins Gefrierfach legen",         down: "Ins Gefrierfach legen",         fam: "air", amb: i => i.Tfreezer, ambLabel: "Gefrierfach" },
+  eis:         { name: "Eiskübel",            up: "In den Eiskübel stellen",       down: "In den Eiskübel stellen",       fam: "water", amb: i => i.salt ? brineT(i.saltG) : 0, ambLabel: "Eiswasser" },
+};
+const ORDER = ["luft", "karaffe", "glas", "wasserbad", "kuehlschrank", "eis", "gefrier"];
+const DEF = { wine: "", target: 16, ttime: "19:00", T0: 14, Tair: 22, rh: 50, airflow: "still", surface: "holz",
+  bottle: "bordeaux", vol: 0.75, bottleMass: 500, abv: 13, method: "luft",
+  decanter: "breit", decMass: 900, glass: "bordeaux", glassVol: 200, preheat: false, preheatT: 40, gpreheat: false, gpreheatT: 40, decant: false, decMin: 30, decOld: false, decCool: false,
+  Tbath: 25, bathVol: 3, stir: false, estir: false, Tfridge: 5, fridgeFan: false, Tfreezer: -18, salt: false, saltG: 150, inGlass: true, guestOff: 0, color: "" };   // Standard: Wein kommt aus dem Keller; Raum und Wein werden getrennt eingestellt
+const store = { get(k, d) { try { const v = localStorage.getItem("wtp." + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("wtp." + k, JSON.stringify(v)); } catch (e) {} } };
+let inp = Object.assign({}, DEF, store.get("inp", {}), { guestOff: 0 });
+for (const k of ["target", "T0", "Tair"]) inp[k] = Math.round(inp[k]);   // ganze Grad überall (Modell etwa ±1 °C genau)   // Gästezeit vorerst nicht in der Oberfläche
+// Einmalig: alter Standard 150 ml pro Glas → 200 ml (selbst eingestellte andere Werte bleiben)
+delete inp.t0room;   // frühere Kopplung Wein = Raum gibt es nicht mehr
+if (!store.get("mig200", false)) { if (inp.glassVol === 150) inp.glassVol = 200; store.set("mig200", true); store.set("inp", inp); }
+let cal = Object.assign({ air: 1, water: 1 }, store.get("cal", {}));
+let tracking = store.get("track", null);
+let last = null;
+
+// ----------------------------------------------------------------- Helfer
+const $ = id => document.getElementById(id);
+const de = (n, d = 1) => { let t = n.toFixed(d).replace(".", ","); if (d === 1 && t.endsWith(",0")) t = t.slice(0, -2); return t.replace("-", "−"); };
+const deg = n => de(Math.round(n * 10) / 10) + "\u00a0°C";
+const deg0 = v => de(v) + "°";
+const minTxt = sec => Math.round(sec / 60) + "\u00a0min";   // Dekantierzeiten immer in Minuten, wie bei der Auswahl
+const degS = v => deg(Math.round(v));   // für Ergebnis und Ablauf: ganze Grad (Modell ist etwa ±1 °C genau)   // kurz für Kacheln
+const hm = d => d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
+function dur(sec) { if (sec === null || sec === undefined || !isFinite(sec)) return "über 16 h"; const m = Math.round(sec / 60); if (m < 1) return "unter 1\u00a0min"; if (m < 60) return m + "\u00a0min"; const h = Math.floor(m / 60), r = m % 60; return h + "\u00a0h" + (r ? "\u00a0" + r + "\u00a0min" : ""); }
+function targetDate() {
+  const [H, Mi] = (inp.ttime || "19:00").split(":").map(Number); const now = new Date(); const d = new Date(now);
+  d.setHours(H, Mi, 0, 0); if (d - now < -30 * 60000) d.setDate(d.getDate() + 1); return d;
+}
+function dewPoint(T, rh) { const a = 17.62, b = 243.12, g = Math.log(Math.max(rh, 1) / 100) + a * T / (b + T); return b * g / (a - g); }
+// Vorwärmen getrennt: Karaffe (preheat) und Gläser bei der Methode „In die Gläser“ (gpreheat)
+function modelInput(key) {
+  const o = Object.assign({}, inp, { bottleMass: inp.bottleMass / 1000, decMass: inp.decMass / 1000, Tsalt: brineT(inp.saltG) });
+  if (key === "glas") Object.assign(o, { preheat: !!inp.gpreheat, preheatT: inp.gpreheatT });
+  if (key === "eis") o.stir = !!inp.estir;   // Drehen im Eiskübel getrennt vom Wasserbad
+  return o;
+}
+// Eis + Salzwasser: Das Eis schmilzt und entzieht der Lake Wärme, bis sie ihren Gefrierpunkt erreicht.
+// Gefrierpunkt wässriger NaCl-Lösung nach Massenanteil (CRC Handbook, Colligative Properties);
+// tiefster Punkt: Eutektikum −21,1 °C bei 23,3 %.
+const BRINE = [[0, 0], [1, -0.59], [2, -1.19], [3, -1.79], [4, -2.41], [5, -3.05], [6, -3.7], [7, -4.38], [8, -5.08], [9, -5.81],
+  [10, -6.56], [12, -8.18], [14, -9.94], [16, -11.89], [18, -14.03], [20, -16.46], [22, -19.18], [23.3, -21.1]];
+function brineT(gPerL) {
+  const w = Math.min(23.3, 100 * gPerL / (gPerL + 1000));
+  for (let i = 1; i < BRINE.length; i++) if (w <= BRINE[i][0]) {
+    const [w0, t0] = BRINE[i - 1], [w1, t1] = BRINE[i]; return t0 + (t1 - t0) * (w - w0) / (w1 - w0); }
+  return -21.1;
+}
+const SALT = [50, 100, 150, 200, 250, 300];
+
+// ----------------------------------------------------------------- Rechnen
+// Ziel im Glas: Einschenktemperatur so, dass der Wein direkt nach dem Einschenken – nach dem Temperatur-
+// ausgleich mit dem Glas bei Raumtemperatur – die Zieltemperatur hat. Danach wärmen Glas und Luft weiter;
+// der Wert nach DRINK Sekunden wird nur angezeigt.
+const DRINK = 15 * 60;
+function glassRun(T0) {
+  const s = M.build(Object.assign(modelInput(), { T0, preheat: false }), "glas");
+  const r = M.simulate(s, { Ttarget: 999, kH: cal.air, record: true, recordUntil: 2400, recordStep: 20, tmax: 2420 });
+  const pts = r.pts.filter(p => p[0] <= DRINK);
+  return { mix: r.Tmix, mean: pts.reduce((a, p) => a + p[1], 0) / pts.length, end: pts[pts.length - 1][1], pts: r.pts };
+}
+let serveMemo = { k: "", v: null };
+function serve() {
+  if (!inp.inGlass) return null;
+  const key = [inp.target, inp.Tair, inp.rh, inp.airflow, inp.glass, inp.glassVol, inp.abv, cal.air].join("|");
+  if (serveMemo.k === key) return serveMemo.v;
+  let lo = inp.target - 10, hi = inp.target + 10;
+  for (let i = 0; i < 22; i++) { const mid = (lo + hi) / 2; if (glassRun(mid).mix > inp.target) hi = mid; else lo = mid; }
+  const T = Math.round((lo + hi) / 2 * 10) / 10, g = glassRun(T);
+  serveMemo = { k: key, v: { T, mix: g.mix, mean: g.mean, end: g.end, pts: g.pts } };
+  return serveMemo.v;
+}
+// Aus der Karaffe servieren: rückwärts rechnen Glas ← Karaffe ← Flasche. Gesucht ist die Flaschentemperatur
+// beim Umfüllen, die nach decMin Minuten in der Karaffe (Glas bei Raumtemperatur) die Einschenktemperatur ergibt.
+const decMemo = new Map(), DEC_MIN_T = 2;   // kälter als 2 °C beim Umfüllen ist nicht sinnvoll machbar
+const DEC_TIMES = [0, 15, 30, 60, 90, 120];
+function decTarget(min = inp.decMin) {
+  const S = inp.inGlass ? serve().T : inp.target, sec = min * 60;
+  const key = [S, sec, inp.Tair, inp.rh, inp.airflow, inp.decanter, inp.decMass, inp.vol, inp.abv, cal.air, inp.decCool].join("|");
+  if (decMemo.has(key)) return decMemo.get(key);
+  const build = T => M.build(Object.assign(modelInput(), { T0: T }, decCarafe()), "karaffe");
+  const after = T => sec ? M.simulate(build(T), { Ttarget: 999, kH: cal.air, tStop: sec, tmax: sec + 60 }).T_at : M.simulate(build(T), { Ttarget: 999, kH: cal.air, tmax: 60 }).Tmix;
+  let lo = -5, hi = 40;
+  for (let i = 0; i < 26; i++) { const mid = (lo + hi) / 2; if (after(mid) > S) hi = mid; else lo = mid; }
+  const T = Math.round((lo + hi) / 2 * 10) / 10;
+  const r = M.simulate(build(T), { Ttarget: 999, kH: cal.air, record: true, recordUntil: sec, recordStep: 30, tmax: sec + 30 });
+  const v = { T, S, mix: r.Tmix, pts: sec ? r.pts.filter(q => q[0] <= sec) : [[0, r.Tmix]] };
+  if (decMemo.size > 60) decMemo.clear(); decMemo.set(key, v); return v;
+}
+const decOn = () => !!inp.decant;
+const DEC_COOL_T = 12;   // kalt ausgespülte Karaffe, grob Leitungswasser – Annahme
+const decCarafe = () => inp.decCool ? { preheat: true, preheatT: DEC_COOL_T } : { preheat: false };
+// Ende der Flaschen-Phase: Einschenken, bzw. Umfüllen in die Karaffe
+const endDate = () => decOn() ? new Date(targetDate() - inp.decMin * 60000) : targetDate();
+// Zieltemperatur je Methode: bei der Methode „Glas“ steht der Wein schon im Glas
+const tgt = key => decOn() ? decTarget().T : inp.inGlass && key !== "glas" ? serve().T : inp.target;
+function runMethod(key, opts = {}) {
+  const k = cal[METHODS[key].fam];
+  const s = M.build(modelInput(key), key);
+  return M.simulate(s, Object.assign({ Ttarget: tgt(key), kH: k, needWindow: true, tmax: 16 * 3600 }, opts));
+}
+// Zu spät: Was kommt heraus, wenn man jetzt startet und trotzdem zur geplanten Zeit einschenkt?
+// Mit Karaffe wird spätestens beim Einschenken umgefüllt; die Zeit in der Karaffe wird entsprechend kürzer.
+function lateOutcome(key, now, fin, tServe) {
+  const s = M.build(modelInput(key), key), k = cal[METHODS[key].fam];
+  const at = (sim, sec) => sec < 1 ? sim.T0 : M.simulate(sim, { Ttarget: tgt(key), kH: k, tStop: sec, tmax: sec + 60 }).T_at;
+  if (decOn()) {
+    // Umfüllen zur geplanten Zeit (volle Karaffenzeit); ist die schon vorbei, gleich umfüllen
+    const tDec = new Date(Math.max(Math.floor(+now / 60000) * 60000, +endDate())),
+      B = at(s, Math.max(0, (tDec - now) / 1000)), inDec = Math.max(0, (tServe - tDec) / 1000);
+    const kar = M.build(Object.assign(modelInput(), { T0: B }, decCarafe()), "karaffe");
+    const K = inDec >= 1 ? M.simulate(kar, { Ttarget: 999, kH: cal.air, tStop: inDec, tmax: inDec + 60 }).T_at : M.simulate(kar, { Ttarget: 999, kH: cal.air, tmax: 60 }).Tmix;
+    return { cup: inp.inGlass ? glassRun(K).mix : K, K, B, tDec, inDec, noTime: inDec < inp.decMin * 60 };
+  }
+  const B = at(s, (tServe - now) / 1000);
+  return { cup: inp.inGlass && key !== "glas" ? glassRun(B).mix : B, B, tDec: null, inDec: 0 };
+}
+function compute() {
+  const now = new Date(), tDate = endDate(), tServe = targetDate(), Tm = tgt(inp.method), up = Tm > inp.T0;
+  const same = Math.abs(Tm - inp.T0) < 0.3;
+  const res = {};
+  for (const key of ORDER) {
+    const m = METHODS[key], amb = m.amb(inp), r = { key, valid: true };
+    const Tk = tgt(key), upk = Tk > inp.T0;
+    if (Math.abs(Tk - inp.T0) < 0.3) { r.valid = false; r.why = "Wein hat schon Zieltemperatur"; }
+    else if (upk !== up) { r.valid = false; r.why = up ? "nur zum Kühlen" : "nur zum Erwärmen"; }
+    else if (up ? amb <= Tk + 0.2 : amb >= Tk - 0.2) {
+      r.valid = false; r.why = key === "wasserbad" && !up && Tk < 11 ? `Leitungswasser ist zu warm, um auf ${degS(Tk)} zu kühlen. Mit Eis geht es: Eiskübel`
+        : `${m.ambLabel} (${degS(amb)}) ist zu ${up ? "kalt" : "warm"}, um ${decOn() && key !== "glas" ? "die Flasche vor dem Umfüllen" : key === "glas" ? "den Wein im Glas" : "die Flasche"} auf ${degS(Tk)} zu ${up ? "erwärmen" : "kühlen"}` + (key === "wasserbad" ? " (Wassertemperatur anpassen)" : "");
+    }
+    if (key === "gefrier" && up) { r.valid = false; r.why = "nur zum Kühlen"; }
+    if (key === "eis" && up) { r.valid = false; r.why = "nur zum Kühlen"; }
+    if (key === "kuehlschrank" && up) { r.valid = false; r.why = "nur zum Kühlen"; }
+    if (decOn() && (key === "karaffe" || key === "glas")) { r.valid = false; r.why = key === "karaffe" ? "das Umfüllen ist schon eingeplant" : "passt nicht zum Servieren aus der Karaffe"; }
+    // gesperrt: passt grundsätzlich nicht (Richtung, Raumluft). Offen bleiben Methoden, die man
+    // über ihre eigene Temperatur passend machen kann (Wasser, Kühlschrank, Gefrierfach, Salz).
+    r.locked = !r.valid && !(["wasserbad", "kuehlschrank", "gefrier", "eis"].includes(key) && /ist nicht/.test(r.why || ""));
+    if (r.valid) {
+      const main = runMethod(key);
+      if (main.tHit === null) { r.valid = false; r.why = key === "wasserbad" ? `erreicht ${deg(Tk)} nicht: Das Wasser ${up ? "kühlt" : "erwärmt sich"} zu schnell ${up ? "ab" : ""}. Mehr Wasser oder ${up ? "wärmeres" : "kälteres"} Wasser nehmen${up ? "" : " oder Eis dazugeben"}`.replace(" ab.", " ab.").replace("schnell .", "schnell.")
+        : (up ? main.Tmix > Tk + 0.2 : main.Tmix < Tk - 0.2)
+          // Schon das Umfüllen schießt übers Ziel (z. B. vorgewärmte Gläser oder Karaffe)
+          ? `schon beim Umfüllen ${key === "glas" ? "ins Glas" : "in die Karaffe"} ${up ? "wärmer" : "kälter"} als ${inp.inGlass && key !== "glas" ? "die Einschenktemperatur" : "das Ziel"} ${deg(Tk)} (sofort ${deg(main.Tmix)})` +
+            ((key === "glas" ? inp.gpreheat : inp.preheat) ? `. Ohne Vorwärmen probieren` : "")
+          : "erreicht das Ziel nicht (Ziel zu nah an der Umgebungstemperatur)"; }
+      else {
+        const slow = runMethod(key, { kH: cal[m.fam] * 0.8, needWindow: false });
+        const fast = runMethod(key, { kH: cal[m.fam] * 1.25, needWindow: false });
+        r.D = main.tHit; r.over = main.tPlus1 !== null ? main.tPlus1 - main.tHit : null; r.Dslow = slow.tHit; r.Dfast = fast.tHit; r.win = (main.tPlus1 ?? NaN) - (main.tMinus1 ?? NaN);
+        r.mix = main.Tmix; r.start = new Date(Math.floor((tDate - r.D * 1000) / 60000) * 60000); r.late = +r.start < Math.floor(+now / 60000) * 60000;
+        r.past = r.late && +tServe <= +now;   // Einschenkzeit schon vorbei
+        r.Dshow = (tDate - r.start) / 1000;   // angezeigte Dauer passt genau zu angezeigtem Start und Ende
+        if (r.late) Object.assign(r, { fin: new Date(+now + r.D * 1000) }, lateOutcome(key, now, new Date(+now + r.D * 1000), tServe));
+        r.curve = runMethod(key, { record: true, recordUntil: r.D + 45 * 60, recordStep: 60, needWindow: false }).pts;
+      }
+    }
+    res[key] = r;
+  }
+  // Nachwärmen im Glas nach dem Servieren
+  let glassAfter = null;
+  if (!inp.inGlass && Math.abs(inp.Tair - inp.target) > 1.2) {
+    const s = M.build(Object.assign(modelInput(), { T0: inp.target, preheat: false }), "glas");
+    const r = M.simulate(s, { Ttarget: inp.target + (inp.Tair > inp.target ? 1 : -1), kH: cal.air, tmax: 4 * 3600 });
+    glassAfter = r.tHit;
+  }
+  // Zwischenstände der gewählten Methode: Temperatur nach 15, 30, 45, 60 min
+  let steps = null;
+  if (res[inp.method].valid) {
+    const p = runMethod(inp.method, { record: true, recordUntil: 3600, recordStep: 60, needWindow: false, tmax: 3660 }).pts;
+    steps = [15, 30, 45, 60].map(m => p.find(q => q[0] >= m * 60 - 1)).filter(Boolean);
+  }
+  let toZero = null;
+  if ((inp.method === "gefrier" || (inp.method === "eis" && inp.salt && brineT(inp.saltG) < -1)) && res[inp.method].valid) {
+    const s = M.build(modelInput(inp.method), inp.method); const r = M.simulate(s, { Ttarget: 0, kH: cal[METHODS[inp.method].fam], tmax: 8 * 3600 }); toZero = r.tHit;
+  }
+  const tGuest = inp.guestOff ? new Date(tDate - inp.guestOff * 60000) : null;
+  const sv = inp.inGlass && (decOn() || inp.method !== "glas") ? serve() : null, dec = decOn() ? decTarget() : null;
+  // Zu lange in der Karaffe: so kalt müsste der Wein nicht sinnvoll werden → längste machbare Zeit vorschlagen
+  let decBad = null;
+  if (dec && dec.T < DEC_MIN_T) {
+    const fit = DEC_TIMES.filter(m => m < inp.decMin && decTarget(m).T >= DEC_MIN_T).pop();
+    decBad = { T: dec.T, fit: fit === undefined ? null : fit };
+    for (const k of ORDER) Object.assign(res[k], { valid: false, locked: false, why: "zu lange in der Karaffe (siehe oben)" });
+  }
+  // Verlauf nach der Flaschen-Phase für die Grafik: Karaffe, dann Glas
+  const after = dec ? [...dec.pts, ...(sv ? sv.pts.map(([t, v]) => [inp.decMin * 60 + t, v]) : [])] : sv ? sv.pts : null;
+  return { tGuest, now, tDate, tServe, up, same: same && !decBad, res, glassAfter, toZero, steps, Tm, sv, dec, after, decBad };
+}
+
+// ----------------------------------------------------------------- Ausgabe
+let heroDetOpen = false, optsOpen = false, methodsSig = "", chartPin = null, scrubbing = false;
+// Ablauf je Methode: erster Handgriff (Start) und letzter (Einschenken)
+// Im Glas wärmt der Wein weiter (Glas und Luft bei Raumtemperatur): Stand nach DRINK Sekunden
+const glassLater = () => { const s = serve(); return s ? inp.target + (s.end - s.mix) : null; };
+function glassDrift() {
+  const e = glassLater(); if (e === null) return "";
+  return Math.round(e) !== Math.round(inp.target) ? `, nach ${DRINK / 60}\u00a0min etwa\u00a0${degS(e)}` : "";
+}
+function stepsOf(key, c) {
+  const m = METHODS[key], first = c.up ? m.up : m.down;
+  if (c.dec) {   // Flasche → Karaffe → Glas
+    const now0 = !inp.decMin;
+    return [first, `${OUT.includes(key) ? "Herausnehmen und i" : "I"}n die Karaffe umfüllen${now0 ? ", dann einschenken" : ""}`,
+      now0 ? `${degS(c.dec.S)} in der Karaffe` + (c.sv ? ` → ${degS(inp.target)} im Glas${glassDrift()}` : "") : ""];
+  }
+  const pour = c.sv && key !== "glas" ? `${degS(inp.target)} im Glas${glassDrift()}` : "";
+  const last = key === "glas" ? "Trinken" : ["luft", "karaffe"].includes(key) ? "Einschenken" : "Herausnehmen und einschenken";
+  return [first, last, pour];
+}
+// Zu spät, aber höchstens 1 °C daneben: „knapp“ (das Modell ist etwa ±1 °C genau, mehr Alarm wäre Scheingenauigkeit)
+const near = r => r.late && !r.past && Math.abs(Math.round(r.cup) - Math.round(inp.target)) <= 1;
+const statt = r => Math.round(r.cup) === Math.round(inp.target) ? "" : ` statt ${degS(inp.target)}`;
+const lateWord = r => near(r) ? "etwas spät" : "zu spät";
+// Zu spät: Ab wann hätte der Wein die Zieltemperatur, wenn man jetzt startet und später einschenkt?
+// (mit Karaffe: Flasche fertig, dann die volle Karaffenzeit). 3 min Luft zum Lesen und Tippen, dann auf 5 min
+// aufgerundet wie das Uhrzeit-Rad – sonst ist der Start beim Tippen schon wieder vorbei.
+function laterServe(r, c) {
+  if (!r.late || near(r) || !r.fin || !isFinite(+r.fin)) return null;
+  const t = Math.ceil((+r.fin + 3 * 60000 + (c.dec ? inp.decMin * 60000 : 0)) / 300000) * 300000;
+  return t - c.tServe > 12 * 3600e3 ? null : new Date(t);
+}
+function planRow(key, c) {
+  const r = c.res[key], m = METHODS[key];
+  const right = !r.valid ? "–" : r.late ? `<b>${lateWord(r)}</b><small>um ${hm(c.tServe)} etwa ${degS(r.cup)}</small>` : `<b>${hm(r.start)}</b><small>${dur(r.Dshow)}</small>`;
+  // Rotwein, dem Luft guttut: Karaffe als Methode empfehlen (Weiß/Rosé: Dekantieren bringt meist nichts)
+  const rec = key === "karaffe" && r.valid && decGood();
+  const sub = !r.valid ? `<span class="sub">${r.why}</span>` : rec ? `<span class="sub rec">empfohlen: ${inp.wine} wird mit Luft in der Karaffe besser</span>` : "";
+  const x = hasOpts(key) && !r.locked ? `<button type="button" class="mx" data-x="${key}" aria-expanded="${optsOpen && inp.method === key}" aria-label="Einstellungen ${m.name}"></button>` : "";
+  return `<div class="mrow" data-row="${key}"><button type="button"${r.locked ? " disabled" : ""} class="m${r.valid ? "" : " off"}${r.valid && r.late ? " late" : ""}" data-method="${key}" aria-pressed="${inp.method === key}"
+    aria-label="${m.name}: ${r.valid ? (r.late ? `${lateWord(r)}, um ${hm(c.tServe)} etwa ${degS(r.cup)}${statt(r)}` : `Start ${hm(r.start)}, Dauer ${dur(r.Dshow)}`) : r.why}">
+    <span class="key" style="background:var(--s-${key})"></span><span class="n">${m.name}</span><span class="r">${right}</span>${sub}</button>${x}</div>`;
+}
+// Inhalt unter der gewählten Methode: Ablauf, Starten, Hinweise, Details
+// Gefrierfach/Salzeis: Warnung direkt beim ersten Schritt, mit Uhrzeiten statt Dauer
+function freezeWarn(r, c) {
+  if (!c.toZero) return "";
+  const t0 = r.late ? Math.floor(+c.now / 60000) * 60000 : +r.start, out = r.late ? (r.tDec || c.tServe) : c.tDate;
+  return `<span class="warnline">Wecker auf ${hm(out)} stellen! Ab etwa ${hm(new Date(t0 + c.toZero * 1000))} wird der Wein unter 0 °C, bei etwa −5 °C gefriert er, dann können Korken oder Flasche platzen.</span>`;
+}
+// Zeitspanne zwischen „jetzt“ und dem nächsten Schritt; reicht die Zeit nicht, wird das gesagt
+function lateSpan(r, c) {
+  // Dekantieren: Die Flaschentemperatur steht am Ende des Kühlens/Wärmens, nicht beim Umfüllen
+  if (!r.late) {
+    const T = inp.method === "glas" ? inp.target : c.Tm;
+    return `${c.up ? "wärmt" : "kühlt"} in ${dur(r.Dshow)} auf ${degS(T)}`;
+  }
+  const now0 = Math.floor(+c.now / 60000) * 60000, end = r.tDec || c.tServe, need = Math.ceil(+r.fin / 60000) * 60000;
+  const verb = c.up ? "wärmt" : "kühlt", Tsoll = c.dec ? c.Tm : tgt(inp.method);
+  if (need <= +end) return `${verb} in ${dur((need - now0) / 1000)} auf ${degS(Tsoll)}`;
+  const have = dur((end - now0) / 1000), want = dur(r.Dshow);
+  return Math.round(r.B) === Math.round(Tsoll) ? `${verb} in ${have} auf ${degS(r.B)}` : `nur ${have}${have === want ? "" : ` statt ${want}`}: ${verb} nur auf ${degS(r.B)}`;
+}
+// Zu spät (mehr als knapp): Statt eines Plans, der das Ziel verfehlt, den Plan zeigen, der es erreicht –
+// mit der Uhrzeit, zu der der Wein dann fertig ist. Dazu die Wahl: Einschenken verschieben oder eine
+// Methode, die noch rechtzeitig klappt. Was um die gewünschte Zeit herauskäme, steht in einem Satz.
+function shifted(c) {
+  if (c._sh !== undefined) return c._sh;
+  const r = c.res[inp.method]; c._sh = null;
+  if (!r.valid || !r.late || near(r)) return null;
+  const ls = laterServe(r, c); if (!ls) return null;
+  const keep = inp.ttime;
+  try { inp.ttime = hm(ls); const c2 = compute(), r2 = c2.res[inp.method]; if (r2.valid && !r2.late) c._sh = { ls, c2, r2 }; }
+  finally { inp.ttime = keep; }
+  return c._sh;
+}
+// Methoden, die zur gewählten Zeit noch klappen (die mit dem spätesten Start zuerst: am wenigsten Eile)
+const inTime = c => c.res[inp.method].past ? [] : ORDER.map(k => c.res[k]).filter(x => x.valid && !x.late && x.key !== inp.method).sort((a, b) => b.start - a.start).slice(0, 2);
+// Mit Karaffe zu spät: Klappt die gewählte Methode mit kürzerer Dekantierzeit noch rechtzeitig? (Die Flasche muss
+// dann weniger stark gekühlt/gewärmt werden, weil die Karaffe kürzer nachwärmt.) Die längste passende Zeit.
+function shorterDec(c) {
+  if (c._sd !== undefined) return c._sd;
+  const r = c.res[inp.method]; c._sd = null;
+  if (!c.dec || !inp.decMin || r.past) return null;
+  const keep = inp.decMin;
+  try { for (const t of DEC_TIMES.filter(t => t < keep).reverse()) { inp.decMin = t; const c2 = compute(), r2 = c2.res[inp.method];
+    if (!c2.decBad && r2.valid && !r2.late) { c._sd = { t, start: r2.start }; break; } } }
+  finally { inp.decMin = keep; }
+  return c._sd;
+}
+// Zu spät: Die gewählte Einschenkzeit ist eine Vorgabe (Gäste, Essen). Ein Satz, was herauskäme, und EIN Knopf mit
+// der besten Lösung. Alles Weitere nur hinter „Andere Möglichkeiten“. Reihenfolge: andere Methode, die rechtzeitig
+// klappt (volle Luft) → gleiche Methode, kürzer dekantieren → Einschenken verschieben (Ausweg, Zeit war ja gewählt).
+function shiftedBody(r, c, m) {
+  const sh = shifted(c); if (!sh) return null;
+  const ls = sh.ls, ok = inTime(c)[0], sd = shorterDec(c), rec = decRec();
+  const glassW = inp.inGlass && inp.method !== "glas" ? " im Glas" : "", goal = degS(inp.target);
+  const act = inp.method === "glas" ? "Trinken" : "Einschenken", lsT = (ls.getDate() !== c.tServe.getDate() ? "morgen " : "") + hm(ls);
+  const opts = [];
+  if (ok) opts.push([`class="useMethod" data-k="${ok.key}"`, `${METHODS[ok.key].name} nehmen · Start ${hm(ok.start)}`, `pünktlich um ${hm(c.tServe)} mit ${goal}${inp.inGlass && ok.key !== "glas" ? " im Glas" : ""}`]);
+  if (sd && sd.t) opts.push([`class="decFix" data-v="${sd.t}"`, `Nur ${sd.t} statt ${inp.decMin} min in der Karaffe · Start ${hm(sd.start)}`,
+    `${m.name} klappt dann bis ${hm(c.tServe)}` + (rec && !rec.old && sd.t < parseInt(rec.txt) ? `, aber weniger Luft als für ${inp.wine} empfohlen (${rec.txt})` : "")]);
+  opts.push([`class="serveLater" data-t="${hm(ls)}"`, `${act} auf ${lsT} verschieben`, `${m.name}: Start ${hm(sh.r2.start)}, dann ${goal}${glassW} um ${hm(ls)}`]);
+  const btn = (o, main) => `<div class="opt"><button type="button" ${o[0].replace('class="', `class="${main ? "primary " : ""}`)}>${o[1]}</button><small class="muted">${o[2]}</small></div>`;
+  const head = r.past ? `<strong>Die Zeit ${hm(c.tServe)} ist vorbei.</strong>`
+    : `<strong>Zu spät für ${hm(c.tServe)}.</strong> Mit dieser Methode hätte der Wein um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW} statt ${goal}.`;
+  return `<div class="note bad">${head}</div>` + btn(opts[0], true) +
+    (opts.length > 1 ? `<details class="more"><summary>Andere Möglichkeiten</summary><div class="opts2">${opts.slice(1).map(o => btn(o)).join("")}</div></details>` : "");
+}
+// Mit Karaffe zu spät und keine Minute mehr zum Kühlen/Wärmen: die Methode entfällt, gleich umfüllen
+const lateSkip = (r, c) => r.late && c.dec && !!inp.decMin && (r.noTime || +r.tDec - Math.floor(+c.now / 60000) * 60000 < 60000);
+function planBody(c, orig) {
+  const r = c.res[inp.method], m = METHODS[inp.method];
+  if (!r.valid) return `<div class="note warn">${r.why[0].toUpperCase() + r.why.slice(1)}.</div>`;
+  if (r.late && !near(r)) { const sh = shiftedBody(r, c, m); if (sh) return sh; }
+  // verschobener Plan: Einschenkzeit rot, mit der ursprünglich gewünschten Zeit
+  const tb = d => orig && +d === +c.tServe ? `<b class="lateT">${hm(d)}</b>` : `<b>${hm(d)}</b>`;
+  const was = d => orig && +d === +c.tServe ? ` <em class="was">(statt ${hm(orig)})</em>` : "";
+  const [first, last, pour] = stepsOf(inp.method, c), mins = (r.start - c.now) / 60000;
+  const when = r.late ? `${dur(-mins * 60)} zu spät` : mins < 2 ? "jetzt" : `in ${dur(mins * 60)}`;
+  const glassW = inp.inGlass && inp.method !== "glas" ? " im Glas" : "", goal = degS(inp.target);
+  // Umfüllzeit schon vorbei: Kühlen/Wärmen lohnt nicht mehr, gleich umfüllen
+  const skip = lateSkip(r, c);
+  let h = skip ? `<ol class="tl">
+    <li><b class="time">jetzt</b><span>In die Karaffe umfüllen<small>zum ${c.up ? "Wärmen" : "Kühlen"} ist keine Zeit mehr</small></span></li>` : `<ol class="tl">
+    <li><b class="time">${r.late ? "jetzt" : hm(r.start)}</b><span>${first}<small>${r.late ? "der Start wäre um " + hm(r.start) + " gewesen" : when}</small>${freezeWarn(r, c)}</span></li>
+    <li class="span"><i aria-hidden="true"></i><small>${lateSpan(r, c)}</small></li>`;
+  if (!r.late) h += `<li>${tb(c.tDate)}<span>${last}${was(c.tDate)}${pour ? `<small>${pour}</small>` : ""}</span></li>` +
+    (c.dec && inp.decMin ? `<li class="span"><i aria-hidden="true"></i><small>${c.dec.S >= c.dec.T ? "wärmt" : "kühlt"} in ${minTxt(inp.decMin * 60)} auf ${degS(c.dec.S)}</small></li>
+    <li>${tb(c.tServe)}<span>Einschenken${was(c.tServe)}${c.sv ? `<small>${degS(inp.target)} im Glas${glassDrift()}</small>` : ""}</span></li>` : "");
+  // Zu spät: Die Einschenkzeit bleibt, der Plan zeigt, was dann herauskommt
+  else if (c.dec && !inp.decMin) h += `<li><b>${hm(c.tServe)}</b><span>${last}<small>etwa ${degS(r.cup)}${glassW || " in der Karaffe"}${statt(r)}</small></span></li>`;
+  else if (c.dec) h += (skip ? "" : `<li><b>${hm(r.tDec)}</b><span>${last.replace(", dann einschenken", "")}</span></li>`) +
+    (r.inDec >= 300 ? `<li class="span"><i aria-hidden="true"></i><small>${Math.round(r.K) === Math.round(r.B) ? `${minTxt(r.inDec)} in der Karaffe, bleibt bei ${degS(r.K)}`
+      : `${r.K > r.B ? "wärmt" : "kühlt"} in ${minTxt(r.inDec)}${r.noTime ? ` statt ${minTxt(inp.decMin * 60)}` : ""} auf ${degS(r.K)}`}</small></li>` : "") +
+    `<li><b>${hm(c.tServe)}</b><span>Einschenken<small>etwa ${degS(r.cup)}${glassW || " in der Karaffe"}${statt(r)}</small></span></li>`;
+  else h += `<li><b>${hm(c.tServe)}</b><span>${last}<small>etwa ${degS(r.cup)}${glassW}${statt(r)}</small></span></li>`;
+  h += `</ol>`;
+  if (r.late) {
+    const ok = ORDER.map(k => c.res[k]).filter(x => x.valid && !x.late && x.key !== inp.method).sort((a, b) => a.start - b.start);
+    const why = c.dec ? (skip
+        ? `Das Umfüllen war für ${hm(c.tDate)} geplant, zum ${c.up ? "Wärmen" : "Kühlen"} ist keine Zeit mehr. ${r.inDec >= 300 ? `Gleich umfüllen: Der Wein bekommt ${r.noTime ? `noch ${minTxt(r.inDec)} Luft statt ${minTxt(inp.decMin * 60)}` : `${minTxt(r.inDec)} Luft wie geplant`} und hat` : "Zum Dekantieren bleibt auch keine Zeit. Umgefüllt und gleich eingeschenkt hat er"} um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW || " in der Karaffe"}${statt(r)}.`
+        : `Etwas spät: Der Wein hat um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW || " in der Karaffe"}${statt(r)}${statt(r) ? " – das merkt man kaum" : ""}.`)
+      : near(r) ? `Etwas spät: Startest du jetzt, hat der Wein um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW}${statt(r)}${statt(r) ? " – das merkt man kaum" : ""}.`
+      : `Für ${hm(c.tServe)} ist es mit dieser Methode zu spät. Startest du jetzt, hat er um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW} statt ${goal}.`;
+    const ls = laterServe(r, c);
+    h += `<div class="note ${near(r) ? "warn" : "bad"}">${why}` + (ok.length ? ` Pünktlich klappt es mit ${ok.map(a => `<strong>${METHODS[a.key].name}</strong> (ab ${hm(a.start)})`).join(" oder ")}.` : "") +
+      (ls ? `<span class="later">${ok.length ? "Oder später einschenken" : "Später einschenken geht"}: Mit ${m.name} ab jetzt hat er um ${hm(ls)} ${goal}${glassW}${c.dec ? ` (${minTxt(inp.decMin * 60)} in der Karaffe)` : ""}.</span>
+      <button type="button" class="serveLater" data-t="${hm(ls)}">Einschenken auf ${hm(ls)} stellen</button>` : "") + `</div>`;
+  }
+  if (inp.method === "karaffe" && c.up && r.mix < c.Tm - 0.5 && (r.late || mins < 10)) h += rinseHint(r.mix, c.Tm);
+  if (inp.method === "wasserbad" && c.up && inp.Tbath > 35) h += `<div class="note warn">Wasser über 35 °C erwärmt die Flasche außen ungleichmäßig. Lauwarm (25–30 °C) reicht.</div>`;
+  if (["eis", "gefrier", "wasserbad"].includes(inp.method)) h += `<div class="note">Vor dem ${c.dec ? "Umfüllen" : "Einschenken"} die Flasche einmal langsam kippen: Außen ist der Wein ${c.up ? "wärmer" : "kälter"} als innen.</div>`;
+  // Mehr Details: nur, was man beim Planen oder am Tisch braucht
+  const L = [], dirW = c.up ? "wärmer" : "kälter";
+  const tOver = r.over !== null && r.over !== undefined ? new Date(c.tDate.getTime() + r.over * 1000) : null;
+  const where = { glas: "im Glas", karaffe: "in der Karaffe" }[inp.method], it = where ? `Der Wein kann bis etwa %T ${where} bleiben` : `Die Flasche kann bis etwa %T ${PLACE_IN[inp.method] || "stehen"} bleiben`;
+  if (!r.late && tOver && +tOver - c.tDate < 5 * 60000 && PLACE_IN[inp.method]) L.push(`<b>Pünktlich herausnehmen:</b> Schon wenige Minuten länger ${PLACE_IN[inp.method]} machen den Wein 1\u00a0°C ${dirW}.`);
+  else if (!r.late && tOver) L.push(`<b>Falls es später wird:</b> ${it.replace("%T", hm(tOver))}, dann ist ${where ? "er" : "der Wein"} ${c.dec ? "beim Umfüllen " : ""}höchstens 1\u00a0°C ${dirW} als geplant.`);
+  else if (!r.late && r.over === null) L.push(`<b>Falls es später wird:</b> Kein Problem, er wird mit dieser Methode nicht mehr als 1\u00a0°C ${dirW}.`);
+  const gw = inp.Tair > inp.target ? "wärmer" : "kälter";
+  const g1 = c.sv ? (c.sv.pts.find(q => Math.abs(q[1] - inp.target) >= 1) || [null])[0] : c.glassAfter;
+  if (c.sv && g1 === null && Math.abs(inp.Tair - inp.target) > 1) L.push(`<b>Im Glas:</b> Er bleibt über 40\u00a0min nah an ${degS(inp.target)}.`);
+  else if (g1 && !c.sv) L.push(`<b>Im Glas:</b> Nach etwa ${dur(g1)} ist er 1\u00a0°C ${gw} als ${degS(inp.target)}.`);   // mit „Ziel im Glas“ steht das schon im Ablauf
+  const stp = c.steps ? c.steps.filter(q => Math.round(q[1]) !== Math.round(c.Tm) && Math.round(q[1]) !== Math.round(inp.T0)) : [];
+  if (stp.length && r.D > 20 * 60) { const [t, T] = stp.reduce((a, q) => Math.abs(q[0] - r.D / 2) < Math.abs(a[0] - r.D / 2) ? q : a);
+    L.push(`<b>Zum Nachmessen:</b> ${Math.round(t / 60)}\u00a0min nach dem Start hat der Wein ${where || "in der Flasche"} etwa ${degS(T)}.`); }
+  if (r.mix !== undefined && Math.round(r.mix) !== Math.round(inp.T0)) L.push(`<b>${inp.method === "glas" ? "Beim Einschenken" : "Beim Umfüllen"}:</b> ${inp.method === "glas" ? "Das Glas" : "Die Karaffe"} ${r.mix > inp.T0 ? "wärmt" : "kühlt"} den Wein sofort von ${degS(inp.T0)} auf ${degS(r.mix)}.`);
+  const td = dewPoint(inp.Tair, inp.rh);
+  if (m.fam === "air" && c.up && inp.T0 < td - 0.5 && inp.method !== "glas") L.push(`<b>Beschlagen:</b> Die ${inp.method === "karaffe" ? "Karaffe" : "Flasche"} beschlägt (Taupunkt ${degS(td)}), die Wärme daraus ist eingerechnet.`);
+  const det = L.map(l => `<p class="dl">${l}</p>`).join("");
+  h += `<details class="more hdet" id="hdet"${heroDetOpen ? " open" : ""}><summary>Mehr Details</summary><div class="hdet-in">${det}</div></details>`.replace(/<details[^>]*><summary>Mehr Details<\/summary><div class="hdet-in"><\/div><\/details>/, "");
+  return h;
+}
+function renderPlan(c) {
+  const quiet = c.same || !!c.decBad;   // nichts zu tun oder unmöglich: nur der Kopf
+  const h = $("hero"), day = c.tServe.getDate() !== c.now.getDate() ? "morgen" : "heute";
+  const col = COLORS.find(x => x[0] === inp.color), wineName = inp.wine || (col ? col[1] : "Wein");
+  // Angaben als vier Kacheln nebeneinander; im geführten Modus führt jede Kachel zurück zu ihrer Frage
+  const wiz = ui.mode === "wiz", place = PLACES.find(p => p[1] === inp.T0);
+  const tile = (st, lab, v, aria) => wiz ? `<button type="button" class="gv" data-s="${st}" aria-label="${aria}, ändern"><small>${lab}</small><b>${v}</b></button>` : `<div class="gv"><small>${lab}</small><b>${v}</b></div>`;
+  let top = `<div class="goal"><div class="gh">${wineName}${c.dec ? (inp.decMin ? ` · ${inp.decMin} min in der Karaffe` : " · aus der Karaffe") : ""}${wiz ? " · Werte antippen zum Ändern" : ""}</div><div class="g4">` +
+    tile(0, day === "morgen" ? "morgen<br>um" : "heute<br>um", hm(c.tServe), `Einschenken ${day} ${hm(c.tServe)}`) +
+    tile(1, inp.inGlass ? "Wein<br>im Glas" : "Ziel", deg0(inp.target), `${inp.inGlass ? "Wein im Glas" : "Ziel"} ${degS(inp.target)}`) +
+    tile(3, "Wein<br>jetzt", deg0(inp.T0), `Wein jetzt ${degS(inp.T0)}${place ? " (" + place[0] + ")" : ""}`) +
+    tile(2, `<span class="lg">Raum\u00adtemperatur</span><span class="sm">Raum</span>`, deg0(inp.Tair), `Raumtemperatur ${degS(inp.Tair)}`) + `</div></div>`;
+  if (c.same) top += c.dec ? `<div class="what">Der Wein hat mit ${degS(inp.T0)} schon die richtige Temperatur. Um <strong>${hm(c.tDate)}</strong> in die Karaffe umfüllen${inp.decMin ? `, um ${hm(c.tServe)} einschenken` : " und einschenken"}.</div>`
+    : `<div class="what">Der Wein hat mit ${degS(inp.T0)} schon etwa die ${c.sv ? "Einschenktemperatur" : "Zieltemperatur"} von ${degS(c.Tm)}. Nichts zu tun.</div>`;
+  else if (!c.decBad) top += `<div class="dir">${dirText(c.Tm)}</div>`;
+  if (c.decBad) top += `<div class="note warn"><strong>Zu lange in der Karaffe.</strong> Bei ${degS(inp.Tair)} Raumtemperatur wird der Wein in ${minTxt(inp.decMin * 60)} zu warm: Er müsste beim Umfüllen ${c.decBad.T <= -4.9 ? "unter −5 °C" : degS(c.decBad.T)} haben, so kalt geht nicht sinnvoll. ` +
+    (c.decBad.fit !== null ? `<button type="button" class="decFix" data-v="${c.decBad.fit}">${c.decBad.fit ? `Nur ${c.decBad.fit} min in der Karaffe` : "Erst beim Einschenken umfüllen (0 min)"}</button>` : `Lieber aus der Flasche servieren.`) + `</div>`;
+  // Reihenfolge nach Praktikabilität: rechtzeitige von langsam nach schnell (Kühlschrank vor Gefrierfach vor Eis),
+  // dann zu späte, dann nicht passende
+  const rank = k => { const r = c.res[k]; return !r.valid ? 2e9 : r.late ? 1e9 - r.D : -r.D; };
+  const on = ORDER.filter(k => c.res[k].valid || k === inp.method).sort((a, b) => rank(a) - rank(b)), off = ORDER.filter(k => !on.includes(k));
+  const sig = (quiet ? "same" : on.join() + "|" + off.join() + "|" + inp.method);
+  if (sig !== methodsSig || !$("ptop")) {
+    const foc = $("optsPanel").contains(document.activeElement) ? document.activeElement.id : null;
+    $("optsHome").appendChild($("optsPanel"));
+    h.innerHTML = `<div id="ptop" style="display:grid;gap:8px"></div>` + (quiet ? "" : `<div class="plh"><span>Methode</span><span class="r"><b>Start</b><small>Dauer</small></span></div>
+      <div class="methods" id="methods">${on.map(k => planRow(k, c)).join("")}</div>
+      <div class="note dectip" id="decTip" hidden></div>
+      <details class="more" id="moreM"${off.length ? "" : " hidden"}><summary id="moreSum">Weitere Methoden (${off.length}, passen gerade nicht)</summary><div class="methods" id="methodsOff">${off.map(k => planRow(k, c)).join("")}</div></details>`);
+    if (!quiet) {
+      $("decTip").insertAdjacentHTML("afterend", `<div class="psel" id="psel"><h3 id="psh"></h3><div id="pselBody" style="display:grid;gap:10px"></div>
+        <div class="ptools"><span id="startSlot"></span></div></div>`);
+    }
+    methodsSig = sig;
+    placeOpts();
+    if (foc && $(foc)) $(foc).focus({ preventScroll: true });
+  } else for (const k of ORDER) {
+    const old = h.querySelector(`.mrow[data-row="${k}"]`);
+    if (old) { const t = document.createElement("template"); t.innerHTML = planRow(k, c).trim(); old.replaceWith(t.content.firstChild); }
+  }
+  // Zeile antippen wählt die Methode, der Pfeil klappt ihre Einstellungen direkt darunter auf
+  h.onclick = e => {
+    if (e.target.closest(".decOnBtn")) { inp.decant = true; decApplyRec(); save(); renderOpts(); render(); return; }
+    const um = e.target.closest(".useMethod");
+    if (um) { inp.method = um.dataset.k; optsOpen = false; save(); renderOpts(); render(); return; }
+    const sl = e.target.closest(".serveLater");
+    if (sl) { inp.ttime = sl.dataset.t; save(); renderOpts(); render(); return; }
+    const fx = e.target.closest(".decFix");
+    if (fx) { inp.decMin = +fx.dataset.v; save(); renderOpts(); render(); return; }
+    const g = e.target.closest("button.gv");
+    if (g) { ui.step = +g.dataset.s; wizEdit = true; saveUi(); applyMode(); $("wiz").scrollIntoView({ block: "start" }); $("wzQ").focus({ preventScroll: true }); return; }
+    const x = e.target.closest(".mx"), b = x ? null : e.target.closest(".m");
+    const k = x ? x.dataset.x : b && !b.disabled ? b.dataset.method : null;
+    if (!k) return;
+    if (k === inp.method) { if (x) { optsOpen = !optsOpen; placeOpts(); } return; }
+    inp.method = k; optsOpen = !!x;
+    if (k === "wasserbad") { const T = tgt("wasserbad"), up = T > inp.T0; if (up ? inp.Tbath <= T + 1 : inp.Tbath >= T - 1) inp.Tbath = up ? 25 : 10; }
+    save(); renderOpts(); render();
+  };
+  $("ptop").innerHTML = top;
+  const dt = $("decTip");
+  if (dt) { const show = !c.dec && decGood() && !c.res.karaffe.valid; dt.hidden = !show;
+    if (show) dt.innerHTML = `<span><strong>Tipp:</strong> ${inp.wine} wird mit Luft in der Karaffe besser.</span><button type="button" class="decOnBtn">Dekantieren</button>`; }
+  if (!quiet) {
+    const r = c.res[inp.method];
+    const tr = tracking && tracking.method === inp.method ? trackState() : null;
+    $("psh").textContent = tr ? `Läuft: ${METHODS[inp.method].name} seit ${hm(new Date(tracking.t))}` : shifted(c) ? `${METHODS[inp.method].name}: zu spät` : `So geht's: ${METHODS[inp.method].name}`;
+    $("pselBody").innerHTML = tr ? trackingHtml(tr) : planBody(c);
+    $("psel").querySelectorAll(":scope > details.hdet").forEach(e => e.remove());   // altes „Mehr Details“ weg
+    { const d = $("pselBody").querySelector("#hdet"); if (d) $("psel").appendChild(d); }   // „Mehr Details“ unter den Startknopf
+    // „Gestartet“ erst ab 15 min vor dem Start: früher gestartet würde der Wein zu kalt bzw. zu warm
+    const soon = r.valid && (r.late || (r.start - c.now) / 60000 <= 15);
+    $("startSlot").innerHTML = tr ? `<button type="button" id="stopTrack">Beenden</button>` : soon && !tracking && !shifted(c) && !lateSkip(r, c) ? `<button type="button" class="primary" id="startNow">${r.late ? "Trotzdem starten" : "Gestartet"}</button>` : "";
+    const hd = $("hdet"); if (hd) hd.addEventListener("toggle", () => { heroDetOpen = hd.open; });
+    const b = $("startNow"); if (b) b.onclick = () => { tracking = { t: Date.now(), method: inp.method, inp: Object.assign({}, inp, { target: c.Tm }), cal: Object.assign({}, cal) }; store.set("track", tracking); render(); };
+  }
+  placeOpts();
+  const st = $("stopTrack"); if (st) st.onclick = () => { tracking = null; store.set("track", null); render(); };
+}
+// Einstellungen der gewählten Methode: aufklappbar direkt unter ihrer Zeile
+const hasOpts = k => k !== "luft";
+function placeOpts() {
+  const p = $("optsPanel"), row = optsOpen && hasOpts(inp.method) ? document.querySelector(`#hero .mrow[data-row="${inp.method}"]`) : null;
+  if (row) { if (row.nextElementSibling !== p) row.after(p); } else if (p.parentElement !== $("optsHome")) $("optsHome").appendChild(p);
+  $("optsLbl").textContent = `Einstellungen ${METHODS[inp.method].name}`;
+  document.querySelectorAll("#hero .mx").forEach(x => x.setAttribute("aria-expanded", String(!!row && x.dataset.x === inp.method)));
+}
+// Eilig: Karaffe außen lauwarm überspülen. Bewusst nur grob geschätzt, das Thermometer entscheidet.
+// Wein + Karaffe als ein Körper; Wärmeübergang Wasserstrahl → Glas → geschwenkter Wein U ≈ 140 W/m²K
+// auf 0,02–0,045 m² benetzter Fläche am Wein → UA ≈ 3–6 W/K. Wasser 32 °C.
+// Nachlauf: Die Karaffenwand ist beim Aufhören etwa halb so warm wie das Wasser über dem Wein
+// und gibt diese Wärme noch an den Wein ab.
+function rinseHint(T1, Tz) {
+  const Tw = 32, Cg = inp.decMass / 1000 * 840, C = inp.vol * 0.99 * 4000 + Cg;
+  let stop = Tz; for (let i = 0; i < 3; i++) stop = Tz - Cg * (Tw - stop) / 2 / C;
+  if (stop <= T1) return `<div class="note"><strong>Eilig?</strong> Karaffe nur kurz außen lauwarm überspülen (30–35 °C, unter 1\u00a0min), dann schwenken und messen. Die angewärmte Karaffenwand gibt noch Wärme nach.</div>`;
+  const mins = UA => Math.max(1, Math.round(C / UA * Math.log((Tw - T1) / (Tw - stop)) / 60));
+  const a = mins(6), b = mins(3);
+  return `<div class="note"><strong>Eilig?</strong> Karaffe außen lauwarm überspülen (30–35 °C, nicht heiß, sonst kann das Glas zerspringen), ` +
+    `zwischendurch schwenken und alle 1–2 min messen. Grob ${a === b ? a : a + "–" + b}\u00a0min. ` +
+    `Bei etwa <strong>${degS(stop)}</strong> aufhören: Die warme Karaffenwand wärmt noch etwas nach.</div>`;
+}
+function trackState() {
+  const tr = tracking, el = (Date.now() - tr.t) / 1000, m = METHODS[tr.method];
+  const s = M.build(Object.assign({}, tr.inp, { bottleMass: tr.inp.bottleMass / 1000, decMass: tr.inp.decMass / 1000 }, tr.method === "glas" ? { preheat: !!tr.inp.gpreheat, preheatT: tr.inp.gpreheatT } : tr.method === "eis" ? { stir: !!tr.inp.estir } : {}), tr.method);
+  const k = tr.cal[m.fam];
+  const full = M.simulate(s, { Ttarget: tr.inp.target, kH: k, tmax: 16 * 3600 });
+  const now = el > 6 ? M.simulate(s, { Ttarget: tr.inp.target, kH: k, tStop: el, tmax: el + 60 }).T_at : full.Tmix;
+  const eta = full.tHit !== null ? new Date(tr.t + full.tHit * 1000) : null;
+  const tT = (endDate() - tr.t) / 1000;
+  const atTarget = tT > 60 ? M.simulate(s, { Ttarget: tr.inp.target, kH: k, tStop: tT, tmax: tT + 60 }).T_at : null;
+  // Trotzdem gestartet (zu spät): Herausnehmen/Umfüllen bleibt bei der geplanten Zeit
+  const outT = endDate(), late = !!eta && +eta > +outT + 60000 && tT > 60;
+  return { late, outT, el, now, eta, left: full.tHit !== null ? full.tHit - el : null, reached: full.tHit !== null && el >= full.tHit, atTarget, diff: atTarget !== null ? atTarget - tr.inp.target : 0, T: tr.inp.target, key: tr.method, dec: !!tr.inp.decant };
+}
+// Dekantier-Empfehlung nach Körper des Rotweins (Schema: leicht 20–30 min, mittel 30–60, kräftig 60 min und mehr –
+// Wine Folly, „How long to decant wine“). Zuordnung der Rebsorten zum Körper: eigene Einordnung, kein Einzelnachweis.
+const DEC_GROUPS = {
+  leicht: { min: 30, txt: "15–30 min", why: "leichte Rotweine brauchen wenig Luft, zu lange verlieren sie Frucht",
+    w: ["Spätburgunder", "Gamay", "Trollinger", "Schwarzriesling", "Frühburgunder", "Portugieser", "Frappato", "Cinsault"] },
+  mittel: { min: 60, txt: "30–60 min", why: "mittelkräftige Rotweine werden mit etwas Luft runder und offener",
+    w: ["Merlot", "Tempranillo", "Sangiovese", "Grenache", "Barbera", "Zinfandel", "Dornfelder", "Lemberger", "Montepulciano", "Cabernet Franc", "Carménère",
+      "Pinotage", "Zweigelt", "Nero d'Avola", "Corvina", "Mencía", "Carignan", "Lagrein", "Sankt Laurent", "Dolcetto", "Negroamaro", "Regent", "Bobal", "Nerello Mascalese"] },
+  kraeftig: { min: 60, txt: "60–120 min", why: "junge, gerbstoffreiche Rotweine werden mit Luft weicher und zeigen mehr Aroma",
+    w: ["Cabernet Sauvignon", "Syrah / Shiraz", "Syrah Barrique", "Tempranillo Reserva", "Nebbiolo", "Mourvèdre", "Touriga Nacional", "Tannat", "Aglianico", "Petit Verdot", "Sagrantino", "Malbec"] },
+  nein: { min: 0, txt: "nicht dekantieren", why: "liebliche und perlende Rotweine gewinnen durch Luft nichts",
+    w: ["Lambrusco Amabile", "Dornfelder lieblich", "Schwarzriesling lieblich", "Trollinger lieblich", "Zweigelt halbtrocken"] },
+};
+const decRec = () => { if (inp.decOld) return { min: 0, txt: "gleich einschenken, nur den Bodensatz in der Flasche lassen", why: "alte Weine verlieren mit viel Luft schnell ihren Duft", old: true };
+  const g = Object.values(DEC_GROUPS).find(g => g.w.includes(inp.wine)); return g || null; };
+// Empfehlung als Voreinstellung übernehmen (bei Wahl der Rebsorte, „gereift“ oder beim Einschalten)
+// Wein, dem Dekantieren guttut: gewählter Rotwein aus den Gruppen leicht/mittel/kräftig, nicht gereift
+const decGood = () => !inp.decOld && ["leicht", "mittel", "kraeftig"].some(g => DEC_GROUPS[g].w.includes(inp.wine));
+const decApplyRec = () => { const r = decRec(); if (r) inp.decMin = r.min; };
+// Aus der Karaffe servieren: Haken, darunter die Dekantierzeit
+// Trinktemperatur laut Kompendium (Vorspann „Trinktemperatur“); mit Rebsorte deren eigener Bereich (winedata)
+const GUIDE = { Rot: { lo: 12, hi: 18, txt: "leichte Rotweine 12–14\u00a0°C, mittelkräftige 15–17\u00a0°C, kräftige 16–18\u00a0°C" },
+  "Weiß": { lo: 8, hi: 13, txt: "leichte, frische Weißweine 8–10\u00a0°C, kräftige und im Barrique gereifte 11–13\u00a0°C" },
+  "Rosé": { lo: 8, hi: 10, txt: "Rosé 8–10\u00a0°C" } };
+function tempAdvice() {
+  const w = WINES.find(x => x[1] === inp.wine), g = GUIDE[inp.color]; if (!g) return "";
+  const lo = w ? w[2] : g.lo, hi = w ? w[3] : g.hi, t = inp.target;
+  return (w ? `Empfohlen für ${w[1]}: <b class="nw">${lo}–${hi}\u00a0°C</b>` : `Empfohlen: ${g.txt.replace(/(\d+–\d+\u00a0°C)/g, '<span class="nw">$1</span>')}. Mit Rebsorte genauer.`) +
+    (t < lo ? ` <span class="off">${t}\u00a0°C ist kühler als empfohlen.</span>` : t > hi ? ` <span class="off">${t}\u00a0°C ist wärmer als empfohlen.</span>` : "");
+}
+// Rebsorten-Vorschau: Im leeren Auswahlfeld laufen nach 2,5 s einige Rebsorten mit ihrer Temperatur durch – man sieht,
+// was drinsteckt, ohne dass die Seite wächst. Antippen öffnet die gewohnte Liste. „Bewegung reduzieren“: nur Platzhalter.
+function wineReel(sel) {
+  if (!sel || REDUCED) return;
+  let ov = sel.parentElement.querySelector(":scope > .reel");
+  if (!sel.parentElement.classList.contains("reelw")) { const w = document.createElement("span"); w.className = "reelw"; sel.before(w); w.append(sel);
+    ov = document.createElement("span"); ov.className = "reel"; ov.setAttribute("aria-hidden", "true"); w.append(ov); }
+  clearTimeout(sel._t); let i = 0, n = 0;
+  const stop = () => { clearTimeout(sel._t); sel.classList.remove("reeling"); ov.innerHTML = ""; };
+  const names = () => WINES.filter(w => !inp.color || w[0] === inp.color);
+  const step = () => {
+    if (!sel.isConnected || sel.value || document.activeElement === sel) return stop();
+    const list = names(); if (!list.length) return stop();
+    if (n === 6) { n = 0; sel.classList.remove("reeling"); ov.innerHTML = ""; sel._t = setTimeout(step, 2500); return; }   // zwischendurch wieder der Platzhalter
+    const w = list[i++ % list.length]; n++;
+    sel.classList.add("reeling"); ov.innerHTML = `<span>z. B. ${w[1]} · ${w[2]}–${w[3]}\u00a0°C</span>`;
+    sel._t = setTimeout(step, 1500);
+  };
+  for (const ev of ["focus", "pointerdown", "change"]) sel.addEventListener(ev, stop);
+  sel.addEventListener("blur", () => { if (!sel.value) sel._t = setTimeout(step, 2500); });
+  sel._t = setTimeout(step, 2500);
+}
+function decHtml() {
+  // Rotwein: Hauptzweck ist Luft (karaffieren) bzw. Bodensatz trennen (dekantieren). Weiß/Rosé: nur Servieren –
+  // geschmacklich bringt es meist nichts, aber die Karaffe ändert die Temperatur, und das wird mitgerechnet.
+  const red = inp.color === "Rot";
+  const why = (red ? "Junge, kräftige Rote bekommen in der Karaffe Luft (genau: karaffieren), alte trennt man vom Bodensatz."
+    : "Geschmacklich bringt die Karaffe hier meist nichts.") + ` <span class="dw">Karaffe und Raum verändern die Temperatur – der Planer rechnet das ein.</span>`;
+  return `<label class="check"><input type="checkbox" class="decOn"${inp.decant ? " checked" : ""}>${red ? "Dekantieren" : "Aus der Karaffe servieren"}</label>` + (!inp.decant ? `<small class="decRec">${why}</small>` : "") +
+    (inp.decant ? `<div class="grow"><span class="lbl">${red ? "Wie lange Luft vor dem Einschenken?" : "Wie lange in der Karaffe vor dem Einschenken?"}</span>
+    <div class="chips decChips" role="group" aria-label="Zeit in der Karaffe">${DEC_TIMES.map(v => `<button type="button" data-v="${v}" aria-pressed="${+inp.decMin === v}">${v} min</button>`).join("")}</div>
+    ${(r => r ? `<small class="decRec">Empfehlung${r.old ? "" : ` für ${inp.wine}`}: <b>${r.txt}</b> – ${r.why}.</small>` : inp.color === "Rot" ? `<small class="decRec">Mit Rebsorte gibt es eine Empfehlung für die Dauer.</small>` : "")(decRec())}
+    ${red ? `<label class="check"><input type="checkbox" class="decOld"${inp.decOld ? " checked" : ""}>Gereifter Wein (älter als etwa 15 Jahre): nur vom Bodensatz trennen</label>` : ""}
+    <label class="check"><input type="checkbox" class="decCool"${inp.decCool ? " checked" : ""}>Karaffe vorher kalt ausspülen</label>
+    <small class="decRec">${inp.decCool ? "Gerechnet mit einer Karaffe von etwa 12 °C. Sie verändert den Wein beim Umfüllen kaum – so wird er auch bei langer Zeit in der Karaffe nicht zu warm." : "Eine zimmerwarme Karaffe wärmt kalten Wein beim Umfüllen sofort um einige Grad. Das ist eingerechnet."}</small></div>` : "");
+}
+function bindDec(host, after) {
+  host.querySelector(".decOn").onchange = e => { inp.decant = e.target.checked; if (inp.decant) { if (inp.color !== "Rot") { inp.decOld = false; inp.decMin = 0; } decApplyRec(); } save(); after(); };   // Weiß/Rosé: erst beim Einschenken umfüllen
+  const o = host.querySelector(".decOld"); if (o) o.onchange = e => { inp.decOld = e.target.checked; decApplyRec(); save(); after(); };
+  const k = host.querySelector(".decCool"); if (k) k.onchange = e => { inp.decCool = e.target.checked; save(); after(); };
+  host.querySelectorAll(".decChips button").forEach(b => b.onclick = () => { inp.decMin = +b.dataset.v; save(); after(); });
+}
+const TIP0 = `<div class="hint">In die Grafik tippen oder darüber schieben: Hier stehen dann die Temperaturen zur Uhrzeit.</div>`;
+const PLACE_IN = { kuehlschrank: "im Kühlschrank", gefrier: "im Gefrierfach", eis: "im Eiskübel", wasserbad: "im Wasserbad" };
+const OUT = ["wasserbad", "eis", "gefrier", "kuehlschrank"];   // Methoden, bei denen die Flasche herausgenommen wird
+function trackingHtml(t) {
+  const out = OUT.includes(t.key);
+  return `<div class="track"><div style="font:600 22px/1.2 var(--f-num)">jetzt etwa ${degS(t.now)}</div>
+    <div>${t.late && !t.reached ? `Um <strong>${hm(t.outT)}</strong> ${t.dec ? `${out ? "herausnehmen und " : ""}in die Karaffe umfüllen` : out ? "herausnehmen und einschenken" : "einschenken"}, dann etwa ${degS(t.atTarget)} in der Flasche.` : t.reached ? `${degS(t.T)} erreicht um ${hm(t.eta)}.${t.dec ? ` <strong>Jetzt ${out ? "herausnehmen und " : ""}in die Karaffe umfüllen.</strong>` : out ? " <strong>Jetzt herausnehmen.</strong>" : ""}` : t.eta ? `${degS(t.T)} um <strong>${hm(t.eta)}</strong> (in ${dur(t.left)})${t.dec ? ", dann in die Karaffe umfüllen" : out ? ", dann herausnehmen" : ""}.` : "Das Ziel wird mit dieser Methode nicht erreicht."}</div>
+    ${t.atTarget !== null && Math.abs(t.diff) >= 0.8 && !t.reached && !t.late ? `<div>${t.dec ? "Zum Umfüllen" : "Zum Einschenken"} um ${hm(endDate())} hätte er sonst etwa <strong>${degS(t.atTarget)}</strong>, ${t.diff > 0 ? "also noch zu warm" : "also zu kalt"}.</div>` : ""}</div>`;
+}
+function renderOpts() {
+  const B = M.BOTTLES, D = M.DECANTERS, G = M.GLASSES;
+  const sel = (id, obj, val) => `<select id="${id}">${Object.entries(obj).map(([k, v]) => `<option value="${k}"${k === val ? " selected" : ""}>${v.name}</option>`).join("")}</select>`;
+  const num = (id, lab, step, hint = "") => `<div class="frow"><label for="${id}">${lab}</label><input id="${id}" type="number" step="${step}" inputmode="decimal" value="${inp[id]}">${hint ? `<small>${hint}</small>` : ""}</div>`;
+  const chk = (id, lab) => `<label class="check"><input type="checkbox" id="${id}"${inp[id] ? " checked" : ""}>${lab}</label>`;
+  let h = "";
+  const wup = tgt(inp.method) > inp.T0;   // Richtung: erwärmen oder kühlen
+  // Gefäß statt Literangabe: Wasser bis über die Füllhöhe des Weins
+  const vessel = hint => `<div class="grow"><span class="lbl">Gefäß</span><div class="chips" id="vessel" role="group" aria-label="Gefäß">${
+    [[2, "Weinkühler · 2 l"], [3, "Schüssel · 3 l"], [5, "halber Eimer · 5 l"], [10, "Spüle · 10 l"]].map(([v, n]) => `<button type="button" data-v="${v}" aria-pressed="${+inp.bathVol === v}">${n}</button>`).join("")
+    }</div><small class="muted" style="font-size:12px">${hint}</small></div>`;
+  switch (inp.method) {
+    case "luft": h = `<p class="muted" style="margin:0;font-size:13px">Luftfeuchte, Luftzug und Standfläche stellst du unter „Raum und Umgebung“ ein.</p>`; break;
+    case "karaffe": h = `<div class="frow"><label for="decanter">Karaffe</label>${sel("decanter", D, inp.decanter)}</div>
+      ${num("decMass", "Gewicht der Karaffe, Gramm", 10, "Leer gewogen; dicke Böden wiegen schnell 1 kg.")}
+      ${chk("preheat", "Karaffe vorher anwärmen")}${inp.preheat ? num("preheatT", "Karaffe danach etwa °C", 1, "Innen warm ausspülen und gut austropfen lassen oder außen unter den warmen Hahn halten und abtrocknen. Handwarm ≈ 35–40 °C.") : ""}`; break;
+    case "glas": h = `<div class="frow"><label for="glass">Glas</label>${sel("glass", G, inp.glass)}</div>
+      ${num("glassVol", "Wein pro Glas, ml", 10)}
+      ${chk("gpreheat", "Gläser vorher anwärmen")}${inp.gpreheat ? num("gpreheatT", "Glas danach etwa °C", 1, "Innen warm ausspülen und gut austropfen lassen oder außen warm abspülen und abtrocknen.") : ""}`; break;
+    case "wasserbad": h = `${wup
+      ? `${num("Tbath", "Wassertemperatur °C", 1, "Lauwarm 25–30 °C reicht. Wärmer geht schneller, über 35 °C wird die Flasche außen ungleichmäßig warm.")}
+      ${vessel("Je mehr Wasser, desto weniger kühlt das Bad ab – der Wein wird schneller warm.")}`
+      : `${num("Tbath", "Wassertemperatur °C", 1, "Kaltes Leitungswasser hat je nach Jahreszeit etwa 8–15 °C. Kälter geht es mit Eis: Methode Eiskübel.")}
+      ${vessel("Je mehr Wasser, desto weniger erwärmt sich das Bad – der Wein wird schneller kalt.")}`}
+      ${chk("stir", "Flasche alle paar Minuten drehen (geht etwas schneller)")}`; break;
+    case "kuehlschrank": h = `${num("Tfridge", "Kühlschrank °C", 0.5, "Fach meist 4–6 °C, Tür 7–9 °C")}${chk("fridgeFan", "Kühlschrank mit Umluft (No-Frost)")}`; break;
+    case "gefrier": h = `${num("Tfreezer", "Gefrierfach °C", 1)}`; break;
+    case "eis": h = `${chk("salt", "Salz ins Eiswasser")}${inp.salt ? `<div class="frow" style="grid-template-columns:minmax(0,1fr) 60%"><label for="saltG">Salz pro Liter Wasser</label><select id="saltG">${SALT.map(g => `<option value="${g}"${g === +inp.saltG ? " selected" : ""}>${g} g → ${de(Math.round(brineT(g)))}\u00a0°C</option>`).join("")}</select>
+        <small>Kübel voll Eis, nur so viel Wasser, dass die Flasche umspült ist, Salz einrühren. Die Temperatur gilt, solange noch Eis schwimmt und umgerührt wird; im Kübel meist 1–3 °C wärmer. 1 Esslöffel ≈ 15–20 g. Über 300 g/l wird es nicht kälter: −21 °C ist die Grenze.</small></div>` : ""}${chk("estir", "Flasche alle paar Minuten drehen (geht etwas schneller)")}`; break;
+  }
+  $("opts").innerHTML = h;
+  // Glas fürs Ziel im Glas; bei der Methode „Glas“ steht es schon unter den Optionen
+  $("glassRow").innerHTML = inp.inGlass && inp.method !== "glas"
+    ? `<select id="glass" aria-label="Glas">${Object.entries(G).map(([k, v]) => `<option value="${k}"${k === inp.glass ? " selected" : ""}>${v.name.replace(/ \(.*\)$/, "")}</option>`).join("")}</select><span class="ml"><input id="glassVol" type="number" step="10" inputmode="decimal" value="${inp.glassVol}" aria-label="Wein pro Glas in Milliliter"><span aria-hidden="true">ml</span></span>` : "";
+  $("glassRow").querySelectorAll("input,select").forEach(el => el.addEventListener("input", onField));
+  $("opts").querySelectorAll("input,select").forEach(el => el.addEventListener("input", onField));
+  $("opts").querySelectorAll("#vessel button").forEach(b => b.onclick = () => { inp.bathVol = +b.dataset.v; save(); renderOpts(); render(); });
+}
+const CHART = { l: 34, r: 10, t: 34, b: 28 };
+// Maus: Zeiger. Finger: waagrecht schieben bewegt die Linie, senkrecht wischen scrollt die Seite weiter.
+const chartUI = { show: () => {}, hide: () => {}, msOf: () => 0, t0: null, mode: null };
+function bindChart(svg) {
+  svg.addEventListener("pointermove", e => { if (e.pointerType === "mouse") chartUI.show(chartUI.msOf(e.clientX)); });
+  svg.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") chartUI.hide(); });
+  svg.addEventListener("click", e => chartUI.show(chartUI.msOf(e.clientX)));
+  svg.addEventListener("touchstart", e => { const t = e.touches[0]; chartUI.t0 = [t.clientX, t.clientY]; chartUI.mode = null; scrubbing = true; chartUI.show(chartUI.msOf(t.clientX)); }, { passive: true });
+  svg.addEventListener("touchmove", e => { const t = e.touches[0], u = chartUI; if (!u.t0) return;
+    if (!u.mode) { const dx = Math.abs(t.clientX - u.t0[0]), dy = Math.abs(t.clientY - u.t0[1]); if (dx + dy < 6) return; u.mode = dx >= dy ? "x" : "y"; }
+    if (u.mode === "x") { e.preventDefault(); u.show(u.msOf(t.clientX)); } }, { passive: false });
+  const end = () => { chartUI.t0 = null; chartUI.mode = null; setTimeout(() => { scrubbing = false; }, 1500); };
+  svg.addEventListener("touchend", end); svg.addEventListener("touchcancel", end);
+}
+function renderChart(c) {
+  const svg = $("chart"), L = $("legend"), list = ORDER.map(k => c.res[k]).filter(r => r.valid);
+  const W = Math.max(300, Math.round($("chartWrap").clientWidth || 680)), H = W < 520 ? 220 : 280;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  $("tip").hidden = !list.length; $("chartNote").hidden = !list.length;
+  if (!list.length) { svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">Keine Methode erreicht das Ziel.</text>`; L.innerHTML = ""; return; }
+  // Zeitfenster aus den Methoden, nicht aus „jetzt“: Es reicht bis zum Start der gewählten Methode
+  // (mindestens 45 min, höchstens so lang wie die langsamste Methode). Viel langsamere Methoden
+  // laufen von links ins Bild. Rand links/rechts proportional, damit die Linien die Breite nutzen.
+  const sel = c.res[inp.method], Dsel = sel.valid ? sel.D : Math.min(...list.map(r => r.D));
+  const win = Math.min(Math.max(...list.map(r => r.D)), Math.max(2.5 * Dsel, 45 * 60)) * 1000;
+  const first0 = Math.min(...list.map(r => r.late ? +c.now : +r.start));   // früheste Linie (zu späte beginnen jetzt)
+  const tEnd0 = Math.max(c.tDate.getTime() + Math.max(8 * 60000, win * 0.15), c.tServe.getTime() + 8 * 60000);
+  const tMin = Math.max(c.tDate.getTime() - win * 1.08, first0 - 0.06 * (tEnd0 - first0)), tEnd = Math.max(c.tDate.getTime() + Math.max(8 * 60000, win * 0.15), c.tServe.getTime() + 8 * 60000);
+  const Tb = c.sv ? inp.target : c.dec ? c.dec.S : c.Tm, glassEnd = c.after ? c.after[c.after.length - 1][1] : Tb;
+  const aV = c.after ? c.after.map(q => q[1]) : [];   // Karaffe/Glas nach dem Umfüllen mit einschließen
+  const yMin = Math.min(c.up ? inp.T0 - 1 : Math.min(c.Tm, glassEnd) - 2, ...aV.map(v => v - 1)), yMax = Math.max(c.up ? Math.max(Tb, glassEnd) + 1.5 : inp.T0 + 1, ...aV.map(v => v + 1), Tb + 1.5);
+  const { l, r: R, t: T0, b } = CHART, pw = W - l - R, ph = H - T0 - b;
+  const X = ms => l + (ms - tMin) / (tEnd - tMin) * pw, Y = v => T0 + (yMax - v) / (yMax - yMin) * ph;
+  let s = `<defs><clipPath id="plot"><rect x="${l}" y="${T0}" width="${pw}" height="${ph}"/></clipPath></defs>`;
+  const span = yMax - yMin, ys = span > 24 ? 5 : span > 12 ? 2 : 1;
+  for (let v = Math.ceil(yMin / ys) * ys; v <= yMax; v += ys) s += `<line class="grid" x1="${l}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${l - 6}" y="${Y(v) + 4}" text-anchor="end">${v}°</text>`;
+  const hours = (tEnd - tMin) / 3600000, perTick = W < 520 ? 4.5 : 8, step = [5, 10, 15, 30, 60, 120, 180].find(m => hours * 60 / m <= perTick) || 240;
+  const first = new Date(tMin); first.setMinutes(Math.ceil(first.getMinutes() / step) * step, 0, 0);
+  for (let d = first.getTime(); d < tEnd; d += step * 60000) if (X(d) < W - R - 14) s += `<text x="${X(d)}" y="${H - 10}" text-anchor="middle">${hm(new Date(d))}</text>`;
+  s += `<rect class="band" x="${l}" width="${pw}" y="${Y(Tb + 1)}" height="${Y(Tb - 1) - Y(Tb + 1)}"/>`;
+  const labs = [];   // [x, Text, Farbe, Priorität] – oben im Streifen, zwei Zeilen, nichts überlappt
+  if (c.tGuest && +c.tGuest > tMin) { s += `<line class="now" stroke-dasharray="3 3" x1="${X(c.tGuest)}" x2="${X(c.tGuest)}" y1="${T0}" y2="${H - b}"/>`; labs.push([X(c.tGuest), "Gäste", "var(--muted)", 3]); }
+  s += `<line class="tline" x1="${X(c.tDate)}" x2="${X(c.tDate)}" y1="${T0}" y2="${H - b}"/>`;
+  labs.push([X(c.tDate), `${c.dec ? "Umfüllen" : inp.method === "glas" ? "Trinken" : "Einschenken"} ${hm(c.tDate)}`, "var(--accent)", 0]);
+  if (c.dec && inp.decMin) { s += `<line class="tline" x1="${X(c.tServe)}" x2="${X(c.tServe)}" y1="${T0}" y2="${H - b}"/>`; labs.push([X(c.tServe), `Einschenken ${hm(c.tServe)}`, "var(--accent)", 1]); }
+  if (c.now.getTime() > tMin && c.now.getTime() < tEnd) { s += `<line class="now" x1="${X(c.now)}" x2="${X(c.now)}" y1="${T0}" y2="${H - b}"/>`; labs.push([X(c.now), "jetzt", "var(--muted)", 2]); }
+  const placed = [[], []];
+  for (const [x, txt, col] of labs.slice().sort((a, b2) => a[3] - b2[3])) {
+    const w = txt.length * 6.2, x0 = Math.min(Math.max(x - w / 2, l - 20), W - 2 - w);
+    const row = placed.findIndex(rw => rw.every(([a, e]) => x0 > e + 6 || x0 + w < a - 6)); if (row < 0) continue;
+    placed[row].push([x0, x0 + w]); s += `<text x="${x0}" y="${row ? T0 - 19 : T0 - 6}" style="fill:${col}">${txt}</text>`;
+  }
+  const ordered = list.slice().sort((a, b2) => (a.key === inp.method) - (b2.key === inp.method));
+  // Zu spät: Die Methode kann erst jetzt starten – Linie ab „jetzt“, gestrichelt, endet beim echten Wert
+  const stOf = r => r.late ? Math.floor(+c.now / 60000) * 60000 : +r.start;
+  const valAt = (r, ms) => { const tt = (ms - stOf(r)) / 1000, cv = r.curve; if (tt < 0) return null; if (tt <= cv[0][0]) return cv[0][1];
+    for (let i = 1; i < cv.length; i++) if (cv[i][0] >= tt) { const [a, va] = cv[i - 1], [bb, vb] = cv[i]; return va + (vb - va) * (tt - a) / (bb - a); } return null; };
+  for (const r of ordered) {
+    const sel = r.key === inp.method, st = stOf(r);
+    const cut = c.after && r.key !== "glas" ? +c.tDate : tEnd;   // Flasche nur bis zum Einschenken bzw. Umfüllen
+    let pts = [[st, inp.T0], ...r.curve.map(([t, v]) => [st + t * 1000, v])].filter((p, i, a) => p[0] < cut && (p[0] >= tMin || (a[i + 1] && a[i + 1][0] >= tMin)));
+    if (cut < tEnd) { const v = r.late ? valAt(r, cut) : c.Tm; if (v !== null) pts.push([cut, v]); }
+    if (pts.length < 2) continue;
+    s += `<path clip-path="url(#plot)" d="${pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join(" ")}" fill="none" stroke="var(--s-${r.key})" stroke-width="${sel ? 4 : r.late ? 1.5 : 2.5}"${r.late ? ` stroke-dasharray="${sel ? "9 7" : "5 5"}"` : ""} stroke-linejoin="round" stroke-linecap="${r.late ? "butt" : "round"}" opacity="${sel ? 1 : r.late ? .55 : .85}"/>`;
+    if (st >= tMin) s += `<circle opacity="${r.late && !sel ? .55 : 1}" cx="${X(st)}" cy="${Y(inp.T0)}" r="${sel ? 5.5 : r.late ? 3 : 4}" fill="var(--s-${r.key})" stroke="var(--panel)" stroke-width="2"/>`;
+  }
+  if (c.after) {   // Einschenken bzw. Umfüllen: Sprung, danach Karaffe und Glas
+    const gp = [[+c.tDate, c.Tm], ...c.after.map(([t, v]) => [+c.tDate + t * 1000, v])].filter(p => p[0] <= tEnd);
+    s += `<path clip-path="url(#plot)" d="${gp.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join(" ")}" fill="none" stroke="var(--text)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+    s += `<circle cx="${X(c.tDate)}" cy="${Y(c.Tm)}" r="5" fill="var(--text)" stroke="var(--panel)" stroke-width="2"/>`;
+  }
+  s += `<line class="cross" id="cross" x1="0" x2="0" y1="${T0}" y2="${H - b}" visibility="hidden"/><rect id="hit" x="${l}" y="${T0}" width="${pw}" height="${ph}" fill="transparent"/>`;
+  svg.innerHTML = s;
+  $("chartWhite").textContent = !c.after ? "" : `Helle Linie: der Wein ${c.dec && inp.decMin ? "in der Karaffe" + (c.sv ? " und im Glas" : "") : "im Glas"}${sel.late ? ", bei pünktlichem Start" : ""}.`;
+  L.innerHTML = list.slice().sort((a, b) => a.start - b.start).map(r => `<span${r.late && r.key !== inp.method ? ' class="late"' : ""}><i${r.late ? ' class="dash"' : ""} style="background-color:var(--s-${r.key});height:${r.key === inp.method ? 5 : r.late ? 2 : 3}px"></i>${r.key === inp.method ? "<b>" : ""}${METHODS[r.key].name}, ${r.late ? `ab jetzt (${lateWord(r)})` : `Start ${hm(r.start)}`}${r.key === inp.method ? "</b>" : ""}</span>`).join("")
+    + (c.dec ? `<span><i style="background:var(--text);height:5px"></i>${inp.decMin ? "in der Karaffe, dann " : ""}${c.sv ? "im Glas" : "in der Karaffe"} (${degS(c.Tm)} → ${degS(c.sv ? inp.target : c.dec.S)})</span>`
+      : c.sv ? `<span><i style="background:var(--text);height:5px"></i>im Glas nach dem Einschenken (${degS(c.Tm)} → ${degS(inp.target)})</span>` : "");
+  const tip = $("tip"), cross = $("cross"), hit = $("hit");
+  // Feste Höhe für die Werte über der Grafik: Sonst verschiebt sich die Grafik unter dem Finger
+  tip.style.minHeight = `calc(${Math.max(2, Math.ceil(list.length / 2))} * 1.45em + 2.5em)`;
+  const show = ms => {
+    const x = X(ms); if (x < l || x > W - R) return hide();
+    cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
+    const poured = c.after && ms >= +c.tDate;
+    const rows = list.filter(r => !poured || r.key === "glas").map(r => [r, valAt(r, ms)]).filter(p => p[1] !== null);
+    if (poured) { const tt = (ms - c.tDate) / 1000, gp = c.after; let v = gp[gp.length - 1][1];
+      for (let i = 1; i < gp.length; i++) if (gp[i][0] >= tt) { v = gp[i - 1][1] + (gp[i][1] - gp[i - 1][1]) * (tt - gp[i - 1][0]) / (gp[i][0] - gp[i - 1][0]); break; }
+      rows.push([{ key: "glas", sw: "var(--text)", label: c.dec && ms < +c.tServe ? "In der Karaffe" : "Im Glas" }, v]); }
+    tip.innerHTML = `<div class="t">${hm(new Date(ms))}</div><div class="rows">` + (rows.length ? rows.map(([r, v]) => `<div class="l"><span><i style="background:${r.sw || `var(--s-${r.key})`}"></i>${r.label || METHODS[r.key].name}</span><b class="num">${degS(v)}</b></div>`).join("") : `<div class="muted wide">noch nichts gestartet</div>`) + `</div>`;
+    chartPin = { ms, at: Date.now() };
+  };
+  const hide = () => { tip.innerHTML = TIP0; cross.setAttribute("visibility", "hidden"); chartPin = null; };
+  const msOf = clientX => { const box = svg.getBoundingClientRect(), x = (clientX - box.left) / box.width * W; return tMin + (x - l) / pw * (tEnd - tMin); };
+  // Die Bedienung hängt nicht an dieser Zeichnung: Rechnet die App neu, läuft das Schieben einfach weiter
+  chartUI.show = ms => show(ms); chartUI.hide = hide; chartUI.msOf = msOf;
+  if (!svg._bound) { svg._bound = true; bindChart(svg); }
+  // Nach dem Neuberechnen (alle 30 s) bleibt die zuletzt angetippte Uhrzeit stehen
+  if (chartPin && Date.now() - chartPin.at < 10 * 60000) show(chartPin.ms); else tip.innerHTML = TIP0;
+}
+
+
+
+
+// ----------------------------------------------------------------- Drehräder
+const ROW = 30, REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function makeWheel(host, cfg) {
+  const RW = cfg.row || ROW;   // Zeilenhöhe in px, muss zu --row passen
+  const vals = []; for (let v = cfg.min; v <= cfg.max + 1e-9; v = Math.round((v + cfg.step) * 100) / 100) vals.push(v);
+  // loop: Endlosrad wie am iPhone – die Werte stehen 7-mal hintereinander, nach dem Drehen springt das Rad
+  // unsichtbar in die mittlere Kopie zurück.
+  const N = vals.length, COPIES = cfg.loop ? 7 : 1, BASE = cfg.loop ? 3 * N : 0, val = j => vals[((j % N) + N) % N];
+  const id = "wh-" + cfg.key;
+  host.innerHTML = `<div class="wlab${cfg.hideLabel ? " sr-only" : ""}" id="${id}-l">${cfg.label}</div>
+    <div class="wbox"><div class="wheel" id="${id}" role="spinbutton" tabindex="0" aria-labelledby="${id}-l"
+      aria-valuemin="${cfg.min}" aria-valuemax="${cfg.max}"><div class="pad"></div>${Array.from({ length: N * COPIES }, (_, j) => `<div class="wi" data-i="${j}" aria-hidden="true">${cfg.fmt(val(j))}</div>`).join("")}<div class="pad"></div></div></div>
+    <div class="sr-only"><button type="button" data-d="-1">${cfg.label} verringern</button><button type="button" data-d="1">${cfg.label} erhöhen</button></div>`;
+  const el = host.querySelector(".wheel"), items = [...el.querySelectorAll(".wi")];
+  let idx = -1, user = false, t = null, rc = null;
+  const nearest = v => vals.reduce((b, x, i) => Math.abs(x - v) < Math.abs(vals[b] - v) ? i : b, 0);
+  function mark(i) {
+    if (i === idx) return; if (idx >= 0 && items[idx]) items[idx].classList.remove("sel");
+    for (const k of [idx - 1, idx + 1]) if (items[k]) items[k].classList.remove("above", "below");
+    idx = i; items[i].classList.add("sel"); if (items[i - 1]) items[i - 1].classList.add("above"); if (items[i + 1]) items[i + 1].classList.add("below");
+    el.setAttribute("aria-valuenow", val(i)); el.setAttribute("aria-valuetext", cfg.text ? cfg.text(val(i)) : cfg.fmt(val(i)));
+  }
+  // Während programmatischen weichen Scrollens bleibt die Auswahl beim Ziel (sonst setzt ein zweiter schneller Tastendruck zurück)
+  let aim = null;
+  const goto = (j, smooth) => { mark(j); if (smooth && !REDUCED) { aim = j; el.scrollTo({ top: j * RW, behavior: "smooth" }); } else { aim = null; el.scrollTop = j * RW; } };
+  function set(v, smooth) { goto(BASE + nearest(v), smooth); }
+  const recenter = () => { if (!cfg.loop) return; const k = BASE + (((idx % N) + N) % N); if (k !== idx) { el.scrollTop = k * RW; mark(k); } };
+  // Nur echte Bedienung (Finger, Mausrad) ändert Werte – programmatisches Scrollen nie.
+  for (const ev of ["pointerdown", "touchstart", "wheel"]) el.addEventListener(ev, () => { user = true; aim = null; }, { passive: true });
+  el.addEventListener("scroll", () => {
+    const i = Math.max(0, Math.min(items.length - 1, Math.round(el.scrollTop / RW)));
+    if (aim !== null && !user) { if (Math.abs(el.scrollTop - aim * RW) < 1) aim = null; clearTimeout(rc); rc = setTimeout(recenter, 400); return; }
+    aim = null;
+    if (i !== idx) { const changed = val(i) !== val(idx); mark(i); if (user && changed) cfg.onChange(val(i)); }
+    clearTimeout(t); t = setTimeout(() => { user = false; }, 300);
+    clearTimeout(rc); rc = setTimeout(recenter, 400);
+  }, { passive: true });
+  el.addEventListener("click", e => { const w = e.target.closest(".wi"); if (w) { const i = +w.dataset.i; user = false; goto(i, true); cfg.onChange(val(i)); } });
+  const stepBy = d => { const i = cfg.loop ? idx + d : Math.max(0, Math.min(N - 1, idx + d)); user = false; goto(Math.max(0, Math.min(items.length - 1, i)), true); cfg.onChange(val(idx)); };
+  el.addEventListener("keydown", e => {
+    const k = { ArrowUp: -1, ArrowDown: 1, PageUp: -5, PageDown: 5 }[e.key];
+    if (k) { e.preventDefault(); stepBy(k); } else if (e.key === "Home") { e.preventDefault(); set(vals[0], true); cfg.onChange(vals[0]); } else if (e.key === "End") { e.preventDefault(); set(vals[N - 1], true); cfg.onChange(vals[N - 1]); }
+  });
+  host.querySelectorAll(".sr-only button").forEach(b => b.onclick = () => stepBy(+b.dataset.d));
+  return { set, get value() { return val(idx); } };
+}
+
+// ----------------------------------------------------------------- Ausgabe ergänzen
+function renderHints() {
+  const w = WINES.find(x => x[1] === inp.wine), td = targetDate();
+  const day = td.getDate() !== new Date().getDate() ? "morgen" : "heute";
+  $("timeVal").textContent = hm(td); $("timeDay").textContent = day;
+  $("sumTarget").textContent = w ? w[1] : "";
+  { const a = $("advAll"); if (a) a.innerHTML = tempAdvice(); }
+  const tl = $("wh-target-l"); if (tl) tl.textContent = inp.inGlass ? "Wein im Glas" : "Ziel";   // Richtung steht einheitlich im Ergebnis
+  const sv = last && last.sv;
+  $("sumGlass").textContent = !inp.inGlass ? "Ziel in der Flasche" : inp.method === "glas" ? "Ziel im Glas" : `einschenken mit ${degS(sv.T)}`;
+  $("glassHint").textContent = !inp.inGlass ? "Ziel gilt für den Wein beim Einschenken."
+    : inp.method === "glas" ? "Der Wein steht schon im Glas, das Ziel gilt direkt."
+    : `${decOn() ? "Aus der Karaffe" : "Aus der Flasche"} mit etwa ${degS(sv.T)} einschenken: Das Glas hat Raumtemperatur und bringt den Wein sofort auf ${degS(inp.target)}.` +
+      (Math.round(glassLater()) !== Math.round(inp.target) ? ` Nach ${DRINK / 60} min hat er im Glas etwa ${degS(glassLater())}.` : "");
+  $("dewHint").textContent = `Flaschen unter ${degS(dewPoint(inp.Tair, inp.rh))} beschlagen hier (werden außen nass). Unbekannt? 50 lassen.`;
+  $("sumEnv").textContent = `${inp.rh} % · ${M.AIRFLOW[inp.airflow].name} · ${M.SURFACES[inp.surface].name}`;
+  $("sumBottle").textContent = `${M.BOTTLES[inp.bottle].name.replace(/ \d.*$/, "")} ${de(inp.vol, 2).replace(/0$/, "")} l · ${inp.bottleMass} g · ${de(inp.abv)} %`;
+  const calTxt = `Luft × ${de(cal.air, 2)}, Wasser × ${de(cal.water, 2)}`;
+  $("sumCal").textContent = cal.air === 1 && cal.water === 1 ? "nur wenn du nachmisst" : calTxt;
+  $("calOut").textContent = cal.air === 1 && cal.water === 1 ? "Noch keine Messung übernommen." : `Angepasst nach deiner Messung${cal.when ? ` vom ${cal.when}` : ""} (${calTxt}).`;
+}
+let lastStart = "", liveT = null;
+function renderDock(c) {
+  const r = c.res[inp.method], m = METHODS[inp.method];
+  let t = "–", txt = "";
+  const tr = tracking && tracking.method === inp.method ? trackState() : null;
+  if (tr && tr.late && !tr.reached) { t = hm(tr.outT); txt = `<b>${m.name} läuft</b>um ${hm(tr.outT)} ${tr.dec ? "umfüllen" : OUT.includes(tr.key) ? "herausnehmen" : "einschenken"} · etwa ${degS(tr.atTarget)}`; }
+  else if (tr) { t = tr.eta ? hm(tr.eta) : "–"; txt = `<b>${m.name} läuft</b>${tr.reached ? (tr.dec ? "jetzt in die Karaffe umfüllen" : OUT.includes(tr.key) ? "jetzt herausnehmen" : "fertig") : tr.eta ? `${degS(tr.T)} in ${dur(tr.left)}${tr.dec ? ", dann umfüllen" : OUT.includes(tr.key) ? ", dann herausnehmen" : ""}` : "Ziel wird nicht erreicht"}`; }
+  else if (c.decBad) txt = `<b>Zu lange in der Karaffe</b>Zeit in der Karaffe kürzer stellen`;
+  else if (c.same) txt = `<b>Wein hat schon Zieltemperatur</b>`;
+  else if (!r.valid) txt = `<b>${m.name} passt nicht</b>${r.why}`;
+  else {
+    const mins = (r.start - c.now) / 60000; t = hm(r.start);
+    const sh = shifted(c), skip = lateSkip(r, c);
+    const alt = sh && inTime(c)[0];
+    txt = alt ? `<b>${m.name} · zu spät für ${hm(c.tServe)}</b>rechtzeitig: ${METHODS[alt.key].name} ab ${hm(alt.start)}`
+      : sh ? `<b>${m.name} · ${r.past ? `${hm(c.tServe)} ist vorbei` : `zu spät für ${hm(c.tServe)}`}</b>${degS(inp.target)}${inp.inGlass && inp.method !== "glas" ? " im Glas" : ""} erst um ${hm(sh.ls)}`
+      : skip ? `<b>${m.name} · ${lateWord(r)}</b>gleich in die Karaffe umfüllen · um ${hm(c.tServe)} etwa ${degS(r.cup)}${inp.inGlass ? " im Glas" : ""}${statt(r)}`
+      : r.late ? `<b>${m.name} · ${lateWord(r)}</b>sofort starten · um ${hm(c.tServe)} etwa ${degS(r.cup)}${inp.inGlass && inp.method !== "glas" ? " im Glas" : ""}${statt(r)}`
+      : `<b>${m.name}</b>${mins < 2 ? "jetzt starten" : `in ${dur(mins * 60)}`} · ${c.dec ? `umfüllen um ${hm(c.tDate)}` : `${inp.method === "glas" ? "trinken" : "einschenken"} um ${hm(c.tDate)}`}`;
+    if (r.late) t = alt ? hm(alt.start) : sh ? hm(sh.r2.start) : "jetzt";
+  }
+  $("dockT").textContent = t; $("dockM").innerHTML = txt;
+  if (t !== lastStart) {
+    if (lastStart) for (const el of [$("dockT"), document.querySelector("#hero .time")]) if (el) { el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse"); }
+    lastStart = t; clearTimeout(liveT);
+    liveT = setTimeout(() => { $("live").textContent = `${$("dockT").textContent} ${$("dockM").textContent}`; }, 700);   // genau das, was der Sockel zeigt
+  }
+}
+function render() {
+  if (wizRunning()) return;
+  if (ui.mode === "wiz") renderSum();
+  last = compute();
+  // Gewählte Methode passt grundsätzlich nicht mehr (z. B. Erwärmen statt Kühlen): passende wählen
+  if (last.res[inp.method].locked && !last.same) {
+    const ok = ORDER.map(k => last.res[k]).filter(r => r.valid);
+    const pick = ok.find(r => !r.late) || ok.sort((a, b) => a.D - b.D)[0];
+    if (pick) { inp.method = pick.key; save(); renderOpts(); last = compute(); }
+  } renderPlan(last); renderChart(last); renderHints(); renderDock(last);
+  if (ui.mode === "all") { const d = $("decAll"), f = document.activeElement, fv = d.contains(f) ? (f.dataset.v ?? "on") : null;
+    d.innerHTML = decHtml(); bindDec(d, () => { renderOpts(); render(); });
+    if (fv !== null) { const n = fv === "on" ? d.querySelector(".decOn") : d.querySelector(`.decChips button[data-v="${fv}"]`); if (n) n.focus({ preventScroll: true }); } }
+  document.querySelectorAll("#t0chips button").forEach(b => { const v = b.dataset.v === "raum" ? inp.Tair : +b.dataset.v; b.setAttribute("aria-pressed", String(v === inp.T0));
+    if (b.dataset.v === "raum") b.textContent = `Raumtemperatur ${de(inp.Tair)}°`; });
+}
+
+// ----------------------------------------------------------------- Eingaben
+function save() { store.set("inp", inp); }
+let timer = null;
+const later = () => { save(); clearTimeout(timer); timer = setTimeout(render, 90); };
+function onField(e) {
+  const el = e.target, id = el.id;
+  if (el.type === "checkbox") { inp[id] = el.checked; save(); renderOpts(); render(); return; }
+  if (el.type === "number") { const v = parseFloat(String(el.value).replace(",", ".")); if (!isFinite(v)) return; inp[id] = v; }
+  else inp[id] = el.value;
+  if (id === "saltG") inp.saltG = +el.value;
+  if (id === "wine") { const w = WINES.find(x => x[1] === el.value); if (w) { inp.color = w[0]; inp.target = Math.round((w[2] + w[3]) / 2); W.target.set(inp.target, true); } inp.wine = el.value; if (inp.decant) decApplyRec(); }
+  if (id === "bottle") { const b = M.BOTTLES[el.value]; inp.vol = b.V; inp.bottleMass = Math.round(b.m * 1000); $("vol").value = inp.vol; $("bottleMass").value = inp.bottleMass; }
+  if (id === "decanter") { inp.decMass = Math.round(M.DECANTERS[el.value].m * 1000); const dm = $("decMass"); if (dm) dm.value = inp.decMass; }
+  later();
+}
+const W = {};
+// ----------------------------------------------------------------- Geführter Modus
+// Fragen: 1 Einschenken, 2 Wein, 3 Raum, 4 Wo ist der Wein (Raum vorher, damit „Raumtemperatur“ den richtigen Wert hat).
+// Erwärmen oder Kühlen wird nicht gefragt, sondern aus Ziel und „Wein jetzt“ abgeleitet und angezeigt.
+const COLORS = [["Rot", "Rotwein", "#8A2435"], ["Weiß", "Weißwein", "#E6D69A"], ["Rosé", "Rosé", "#E7A1AC"]];
+const colorTarget = c => ({ Rot: 16, "Weiß": 9, "Rosé": 9 })[c];   // übliche Trinktemperatur ohne Rebsorte
+const PLACES = [["Kühlschrank", 5], ["Kühlschranktür", 8], ["Weinklimaschrank", 12], ["Keller", 14]];
+const STEPS = 4;
+let ui = Object.assign({ mode: "wiz", step: 0, done: false }, store.get("ui", {})), wizEdit = false, wzExact = null;
+const saveUi = () => store.set("ui", ui);
+const wizRunning = () => ui.mode === "wiz" && (!ui.done || wizEdit);
+function applyMode() {
+  const wiz = ui.mode === "wiz", run = wizRunning();
+  $("allIn").hidden = wiz; $("wiz").hidden = !run; $("wsum").hidden = true; $("outBox").hidden = run;   // Angaben stehen als antippbarer Satz im Ergebnis
+  document.body.classList.toggle("wizrun", run); document.body.classList.toggle("mwiz", wiz);
+  document.querySelectorAll(".mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === ui.mode)));
+  if (run) { renderWiz(); return; }
+  renderOpts(); render();
+  if (!wiz) requestAnimationFrame(() => { W.target.set(inp.target); W.T0.set(inp.T0); W.Tair.set(inp.Tair); $("wine").value = inp.wine || ""; });
+}
+// Richtung: in Frage 4 und im Ergebnis derselbe Satz. Ziel im Glas: Die Flasche muss etwas über-/unterschießen.
+function dirText(Tm) {
+  if (Math.abs(Tm - inp.T0) < 0.3) return "Der Wein hat schon etwa die richtige Temperatur.";
+  // Zielwert der Flasche weicht vom Wunsch ab (Glas/Karaffe wärmen nach): Das wird gleich mit erklärt
+  const up = Tm > inp.T0, diff = Math.round(Tm) !== Math.round(inp.target), verb = up ? "erwärmen" : "kühlen";
+  const tail = diff ? ` – ${decOn() ? "Karaffe und Glas bringen" : "das Glas bringt"} ihn auf ${degS(inp.target)}` : "";
+  if (Math.round(Tm) === Math.round(inp.T0)) return `${up ? "▲" : "▼"} ${diff ? "Flasche" : "Wein"} nur ganz leicht ${verb}${tail}`;
+  return `${up ? "▲" : "▼"} ${diff ? "Flasche" : "Wein"} von ${degS(inp.T0)} auf ${degS(Tm)} ${verb}${tail}`;
+}
+const wizDir = () => dirText(tgt(inp.method));
+function renderWiz() {
+  const st = ui.step, el = $("wiz"), tf = v => de(v) + "°", tt = v => de(v) + " Grad";
+  if (st !== 3) wzExact = null;
+  const prog = `<div class="prog">${Array.from({ length: STEPS }, (_, i) => `<i class="${i <= st ? "on" : ""}"></i>`).join("")}<span>&nbsp;Frage ${st + 1} von ${STEPS}</span></div>`;
+  let body = "";
+  if (st === 0) body = `<h2 class="q" id="wzQ" tabindex="-1">Wann schenkst du den Wein ein?</h2><p class="sub" id="wzDay"></p>
+    <div class="wwheels"><div class="wcol" id="wz-h"></div><span class="colon" aria-hidden="true">:</span><div class="wcol" id="wz-m"></div></div>`;
+  else if (st === 1) body = `<h2 class="q" id="wzQ" tabindex="-1">Welcher Wein?</h2>
+    <div class="choices c3">${COLORS.map(([k, n, c]) => `<button type="button" class="choice" data-c="${k}" aria-pressed="${inp.color === k}"><span class="dot" style="background:${c}"></span>${n}</button>`).join("")}</div>
+    ${inp.color ? `<select id="wzWine" aria-label="Rebsorte"><option value="">Rebsorte wählen (optional)</option>${WINES.filter(w => w[0] === inp.color).map(w => `<option value="${w[1]}"${w[1] === inp.wine ? " selected" : ""}>${w[1]} (${w[2]}–${w[3]} °C)</option>`).join("")}</select>
+    <p class="sub adv" id="wzAdv" style="margin:0">${tempAdvice()}</p>
+    <div class="wwheels"><div class="wcol" id="wz-t"></div></div><div class="grow" id="wzDec">${decHtml()}</div>` : `<p class="sub" style="margin:0">Danach kannst du die Rebsorte wählen.</p>`}`;
+  else if (st === 2) body = `<h2 class="q" id="wzQ" tabindex="-1">Wie warm ist es im Raum?</h2><p class="sub">Dort, wo eingeschenkt und getrunken wird.</p>
+    <div class="wwheels"><div class="wcol" id="wz-a"></div></div>`;
+  else {
+    const preset = [inp.Tair, ...PLACES.map(p => p[1])].includes(inp.T0);
+    if (wzExact === null) wzExact = !preset;
+    body = `<h2 class="q" id="wzQ" tabindex="-1">Wo ist der Wein gerade?</h2>
+    <div class="choices c2" id="wzPlaces">${[["Raumtemperatur", inp.Tair], ...PLACES].map(([n, v]) => `<button type="button" class="choice" data-v="${v}" aria-pressed="${!wzExact && inp.T0 === v}">${n.replace("Weinklimaschrank", "Weinklima\u00adschrank")}<small>${de(v)} °C</small></button>`).join("")}<button type="button" class="choice" id="wzExactBtn" aria-pressed="${wzExact}">Genau einstellen<small>${wzExact ? deg(inp.T0) : "mit dem Rad"}</small></button></div>
+    <div class="wwheels" id="wzExactBox"><div class="wcol" id="wz-0"></div></div><p class="wdir" id="wzDir"></p>`; }
+  const can = st !== 1 || !!inp.color;
+  el.innerHTML = prog + body + `<div class="wnav">${st ? `<button type="button" id="wzBack">Zurück</button>` : ""}${ui.done && st < STEPS - 1 ? `<button type="button" id="wzRes">Zum Ergebnis</button>` : ""}<button type="button" class="primary" id="wzNext"${can ? "" : " disabled"}>${st === STEPS - 1 ? "Ergebnis zeigen" : "Weiter"}</button></div>`;
+  const tf2 = v => String(v).padStart(2, "0");
+  if (st === 0) {
+    const day = () => { const td = targetDate(); $("wzDay").textContent = td.getDate() !== new Date().getDate() ? "Das ist morgen – heute ist die Uhrzeit schon vorbei." : ""; };
+    const setT = (h, m) => { inp.ttime = tf2(h) + ":" + tf2(m); save(); day(); };
+    const [h, m] = inp.ttime.split(":").map(Number);
+    const wh = makeWheel($("wz-h"), { key: "zh", label: "Stunde", loop: true, row: 42, min: 0, max: 23, step: 1, fmt: tf2, text: v => v + " Uhr", onChange: v => setT(v, +inp.ttime.split(":")[1]) });
+    const wm = makeWheel($("wz-m"), { key: "zm", label: "Minute", loop: true, row: 42, min: 0, max: 55, step: 5, fmt: tf2, text: v => v + " Minuten", onChange: v => setT(+inp.ttime.split(":")[0], v) });
+    requestAnimationFrame(() => { wh.set(h); wm.set(Math.round(m / 5) * 5); }); day();
+  } else if (st === 1) {
+    el.querySelectorAll("[data-c]").forEach(b => b.onclick = () => {
+      const k = b.dataset.c, w = WINES.find(x => x[1] === inp.wine);
+      if (inp.color !== k) { inp.color = k; if (!w || w[0] !== k) { inp.wine = ""; inp.target = colorTarget(k); } }
+      save(); renderWiz(); $("wzQ").focus({ preventScroll: true }); });
+    if (inp.color) {
+      const wt = makeWheel($("wz-t"), { key: "zt", label: "Wein im Glas", row: 42, min: 4, max: 24, step: 1, fmt: tf, text: tt,
+        onChange: v => { inp.target = v; save(); $("wzAdv").innerHTML = tempAdvice(); } });   // Rebsorte bleibt: eigener Geschmack ist erlaubt
+      $("wzWine").onchange = e => { const w = WINES.find(x => x[1] === e.target.value); inp.wine = e.target.value; if (w) { inp.target = Math.round((w[2] + w[3]) / 2); wt.set(inp.target, true); } if (inp.decant) decApplyRec(); save(); bd(); $("wzAdv").innerHTML = tempAdvice(); };
+      requestAnimationFrame(() => wt.set(inp.target)); wineReel($("wzWine"));
+      const bd = () => { $("wzDec").innerHTML = decHtml(); bindDec($("wzDec"), bd); }; bindDec($("wzDec"), bd);
+    }
+  } else if (st === 2) {
+    const wa = makeWheel($("wz-a"), { key: "za", label: "Raumtemperatur", row: 42, min: 0, max: 35, step: 1, fmt: tf, text: tt, onChange: v => { inp.Tair = v; save(); } });
+    requestAnimationFrame(() => wa.set(inp.Tair));
+  } else {
+    const dir = () => { $("wzDir").textContent = wizDir(); };
+    const mark = () => { el.querySelectorAll("#wzPlaces .choice[data-v]").forEach(b => b.setAttribute("aria-pressed", String(!wzExact && +b.dataset.v === inp.T0)));
+      const x = $("wzExactBtn"); x.setAttribute("aria-pressed", String(wzExact)); x.querySelector("small").textContent = wzExact ? deg(inp.T0) : "mit dem Rad"; dir(); };
+    const w0 = makeWheel($("wz-0"), { key: "z0", label: "Wein jetzt", row: 42, min: -5, max: 30, step: 1, fmt: tf, text: tt, onChange: v => { inp.T0 = v; wzExact = true; save(); mark(); } });
+    // Ort antippen stellt das Rad; Drehen am Rad markiert „Genau einstellen“
+    el.querySelectorAll("#wzPlaces .choice[data-v]").forEach(b => b.onclick = () => { wzExact = false; inp.T0 = +b.dataset.v; w0.set(inp.T0, true); save(); mark(); });
+    $("wzExactBtn").onclick = () => { wzExact = true; save(); mark(); $("wh-z0").focus({ preventScroll: true }); };
+    requestAnimationFrame(() => w0.set(inp.T0)); dir();
+  }
+  const finish = () => { ui.done = true; wizEdit = false; saveUi(); applyMode(); window.scrollTo({ top: 0 }); };
+  if ($("wzBack")) $("wzBack").onclick = () => { ui.step--; saveUi(); renderWiz(); $("wzQ").focus({ preventScroll: true }); };
+  if ($("wzRes")) $("wzRes").onclick = finish;
+  $("wzNext").onclick = () => { if (st === STEPS - 1) finish(); else { ui.step++; saveUi(); renderWiz(); $("wzQ").focus({ preventScroll: true }); } };
+}
+function renderSum() {
+  const td = targetDate(), day = td.getDate() !== new Date().getDate() ? "morgen" : "heute";
+  const col = COLORS.find(c => c[0] === inp.color), place = PLACES.find(p => p[1] === inp.T0);
+  const wn = inp.wine || (col ? col[1] : "Wein");
+  const from = place ? place[0] : "";
+  // [Schritt, kleine Zeile, Wert, Zusatz]; Raumtemperatur immer als eigene Kachel, auch wenn der Wein im Zimmer steht
+  const items = [[0, "Einschenken", `${day} ${hm(td)}`, ""], [1, `${wn} soll`, deg(inp.target), ""],
+    [3, `${wn} hat jetzt`, deg(inp.T0), from], [2, "Raumtemperatur", deg(inp.Tair), ""]];
+  if (!$("wsumIn")) $("wsum").insertAdjacentHTML("afterbegin", `<div id="wsumIn" style="display:grid;gap:8px"></div>`);
+  $("wsumIn").innerHTML = `<span class="lbl">Deine Angaben – antippen zum Ändern</span><div class="sgrid">${items.map(([i, l, v, x]) => `<button type="button" class="srow" data-s="${i}" aria-label="${l} ${v}${x ? " (" + x + ")" : ""}, ändern"><small>${l}</small><b>${v}${x ? ` <i>${x}</i>` : ""}</b></button>`).join("")}</div>`;
+  $("wsum").querySelectorAll(".srow").forEach(b => b.onclick = () => { ui.step = +b.dataset.s; wizEdit = true; saveUi(); applyMode(); $("wiz").scrollIntoView({ block: "start" }); $("wzQ").focus({ preventScroll: true }); });
+}
+
+function init() {
+  const wsel = $("wine");
+  for (const g of ["Rot", "Weiß", "Rosé"]) {
+    const og = document.createElement("optgroup"); og.label = g;
+    WINES.filter(w => w[0] === g).forEach(w => { const o = document.createElement("option"); o.value = w[1]; o.textContent = `${w[1]} (${w[2]}–${w[3]} °C)`; og.appendChild(o); });
+    wsel.appendChild(og);
+  }
+  wineReel(wsel);
+  const fill = (id, obj) => $(id).innerHTML = Object.entries(obj).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join("");
+  fill("airflow", M.AIRFLOW); fill("surface", M.SURFACES); fill("bottle", M.BOTTLES);
+  const tf = v => de(v) + "°", tt = v => de(v) + " Grad";
+  W.target = makeWheel($("w-target"), { key: "target", label: "Wein im Glas", min: 4, max: 24, step: 1, fmt: tf, text: tt,
+    onChange: v => { inp.target = v; later(); } });
+  const [H0, M0] = (inp.ttime || "19:00").split(":").map(Number);
+  const setTime = (h, m) => { inp.ttime = String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0"); later(); };
+  W.hour = makeWheel($("w-hour"), { key: "hour", label: "Stunde", loop: true, hideLabel: true, min: 0, max: 23, step: 1, fmt: v => String(v).padStart(2, "0"), text: v => v + " Uhr",
+    onChange: v => setTime(v, +inp.ttime.split(":")[1]) });
+  W.min = makeWheel($("w-min"), { key: "min", label: "Minute", loop: true, hideLabel: true, min: 0, max: 55, step: 5, fmt: v => String(v).padStart(2, "0"), text: v => v + " Minuten",
+    onChange: v => setTime(+inp.ttime.split(":")[0], v) });
+  W.T0 = makeWheel($("w-T0"), { key: "T0", label: "Wein jetzt", min: -5, max: 30, step: 1, fmt: tf, text: tt, onChange: v => { inp.T0 = v; later(); } });
+  W.Tair = makeWheel($("w-Tair"), { key: "Tair", label: "Raum\u00adtemperatur", min: 0, max: 35, step: 1, fmt: tf, text: tt, onChange: v => { inp.Tair = v; later(); } });
+  $("t0chips").innerHTML = [["Raumtemperatur", "raum"], ["Kühlschrank", 5], ["Kühlschranktür", 8], ["Weinklimaschrank", 12], ["Keller", 14]]
+    .map(([n, v]) => `<button type="button" data-v="${v}">${n}${v === "raum" ? "" : " " + v + "°"}</button>`).join("");
+  $("t0chips").querySelectorAll("button").forEach(b => b.onclick = () => { const room = b.dataset.v === "raum";
+    inp.T0 = room ? inp.Tair : +b.dataset.v; W.T0.set(inp.T0, true); save(); render(); });   // Raumtemperatur: einmal übernehmen, nicht koppeln
+  for (const id of ["wine", "rh", "airflow", "surface", "bottle", "vol", "bottleMass", "abv"]) {
+    const el = $(id); el.value = inp[id]; el.addEventListener("input", onField); el.addEventListener("change", onField);
+  }
+  $("inGlass").checked = !!inp.inGlass; $("inGlass").addEventListener("change", onField);
+  $("calGo").onclick = calibrate;
+  $("calReset").onclick = () => { cal = { air: 1, water: 1 }; store.set("cal", cal); render(); };
+  $("dockBtn").onclick = () => $("hero").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  document.querySelectorAll(".mode button").forEach(b => b.onclick = () => { ui.mode = b.dataset.mode; wizEdit = false; saveUi(); applyMode(); });
+  renderOpts(); render(); validationTable(); applyMode();
+  requestAnimationFrame(() => { W.target.set(inp.target); W.T0.set(inp.T0); W.Tair.set(inp.Tair); });
+  const tp = $("timePanel"), tb = $("timeBtn");
+  const openTime = open => { tp.hidden = !open; tb.setAttribute("aria-expanded", String(open));
+    if (open) { const [h, m] = inp.ttime.split(":").map(Number); requestAnimationFrame(() => { W.hour.set(h); W.min.set(Math.round(m / 5) * 5); $("wh-hour").focus({ preventScroll: true }); }); } };
+  tb.onclick = () => openTime(tp.hidden); $("timeOk").onclick = () => { openTime(false); tb.focus(); };
+  // Sockel mit Startzeit immer sichtbar
+  setInterval(() => { if (document.visibilityState === "visible" && !scrubbing) render(); }, 30000);   // nicht während des Schiebens in der Grafik
+  $("secChart").addEventListener("toggle", () => { if ($("secChart").open && last) renderChart(last); });   // eingeklappt hat die Grafik keine Breite
+  let rz = null; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => last && renderChart(last), 150); });
+}
+function calibrate() {
+  const mins = parseFloat(String($("calMin").value).replace(",", ".")), Tm = parseFloat(String($("calT").value).replace(",", "."));
+  const out = $("calOut"), m = METHODS[inp.method];
+  if (!(mins > 0) || !isFinite(Tm)) { out.textContent = "Bitte Minuten und gemessene Temperatur eintragen."; return; }
+  const s = M.build(modelInput(inp.method), inp.method);
+  const Tat = k => M.simulate(s, { Ttarget: inp.target, kH: k, tStop: mins * 60, tmax: mins * 60 + 60 }).T_at;
+  let lo = 0.25, hi = 4; const up = Tat(1) > s.T0 || m.amb(inp) > inp.T0;
+  const f = k => (Tat(k) - Tm) * (up ? 1 : -1);
+  if (f(lo) > 0 || f(hi) < 0) { out.textContent = `Der Messwert liegt außerhalb dessen, was physikalisch zu ${deg(inp.T0)} Start und ${m.name} passt. Bitte Starttemperatur und Methode prüfen.`; return; }
+  for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2; if (f(mid) > 0) hi = mid; else lo = mid; }
+  cal[m.fam] = Math.round((lo + hi) / 2 * 100) / 100; cal.when = new Date().toLocaleDateString("de-DE");
+  store.set("cal", cal); render();
+  out.textContent = `Übernommen: Wärmeübergang ${m.fam === "air" ? "Luft" : "Wasser"} × ${de(cal[m.fam], 2)}. ` + $("calOut").textContent;
+}
+function validationTable() {
+  const base = Object.assign({}, DEF, { bottleMass: 0.5, decMass: 0.9 });
+  const run = (o, m, Tt) => { const r = M.simulate(M.build(Object.assign({}, base, o), m), { Ttarget: Tt }); return r.tHit ? Math.round(r.tHit / 60) + " min" : "–"; };
+  const rows = [
+    ["Erwärmen"],
+    ["Flasche an der Luft, 4 → 17 °C bei 22 °C", "≈ 150 min", run({ T0: 4, Tair: 22 }, "luft", 17)],
+    ["Wasserbad 22 °C, 4 → 17 °C", "≈ 15 min", run({ T0: 4, Tair: 22, Tbath: 22, bathVol: 10 }, "wasserbad", 17)],
+    ["Abkühlen"],
+    ["Kühlschrank 5 °C ohne Umluft, 20 → 8 °C", "45 min bis 3 h", run({ T0: 20, Tair: 20 }, "kuehlschrank", 8)],
+    ["Kühlschrank 5 °C mit Umluft, 20 → 8 °C", "45 min bis 3 h", run({ T0: 20, Tair: 20, fridgeFan: true }, "kuehlschrank", 8)],
+    ["Gefrierfach −15 °C, 20 → 8 °C", "20–30 min", run({ T0: 20, Tfreezer: -15 }, "gefrier", 8)],
+    ["Eiskübel mit Wasser, 20 → 10 °C", "10–15 min", run({ T0: 20 }, "eis", 10)],
+    ["Eiswasser mit 150 g Salz/l (≈ −9 °C), 20 → 10 °C", "–", run({ T0: 20, salt: true, Tsalt: brineT(150) }, "eis", 10)],
+  ];
+  $("valid").innerHTML = rows.map(r => r.length === 1 ? `<tr><th colspan="3" class="grp">${r[0]}</th></tr>`
+    : `<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td></tr>`).join("");
+  $("brine").innerHTML = [0, ...SALT].map(g => `<tr><td>${g ? g + " g" : "kein Salz"}</td><td class="num">${de(100 * Math.min(g / (g + 1000), 0.233))} %</td><td class="num">${deg(brineT(g))}</td></tr>`).join("");
+}
+
+init();
+</script>
+<div class="update" id="update" hidden><span id="update-text"></span><button type="button" class="btn" id="update-go">Jetzt laden</button></div>
+<style>
+.update { position: fixed; left: 12px; right: 12px; top: max(env(safe-area-inset-top), 12px); z-index: 60;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: #34c759; color: #06240e; padding: 12px 14px; border-radius: 14px; font: 600 15px/1.3 var(--f-body, system-ui);
+  box-shadow: 0 8px 24px rgba(0,0,0,.5); opacity: 0; transition: opacity .35s ease; pointer-events: none; }
+.update.an { opacity: 1; pointer-events: auto; }
+.update[hidden] { display: none; }
+.update.info { background: #2d2d33; color: #f2f2f7; font-weight: 500; }
+.update .btn { width: auto; min-height: 0; padding: 8px 14px; font-size: 15px; background: #06240e; color: #fff; border: 0; border-radius: 999px; }
+.appver { font: inherit; letter-spacing: inherit; text-transform: none; color: inherit; background: none; border: 0; padding: 0; min-height: 0;
+  text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; margin-left: 4px; }
+</style>
+<script>
+const APP_VERSION = '1.0';
+(() => {
+  const updateEl = document.getElementById("update"), txt = document.getElementById("update-text"), go = document.getElementById("update-go");
+  let ausTimer = null, infoTimer = null, checking = false, announced = null;
+  const ein = () => { clearTimeout(ausTimer); updateEl.hidden = false; void updateEl.offsetWidth; updateEl.classList.add("an"); };
+  const aus = () => { updateEl.classList.remove("an"); clearTimeout(ausTimer); ausTimer = setTimeout(() => { if (!updateEl.classList.contains("an")) updateEl.hidden = true; }, 380); };
+  const showInfo = (t, s = 2) => { updateEl.className = "update info"; txt.textContent = t; go.hidden = true; ein(); clearTimeout(infoTimer);
+    if (s) infoTimer = setTimeout(() => { if (updateEl.classList.contains("info")) aus(); }, s * 1000); };
+  const zeigeBanner = t => { updateEl.className = "update"; txt.textContent = t; go.hidden = false; ein(); };
+  const sichern = () => { try { save(); } catch (_) {} };   // Eingaben speichert der Planer ohnehin sofort
+  const tippt = () => { const a = document.activeElement; return !!a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName); };
+  updateEl.addEventListener("click", () => { if (updateEl.classList.contains("info")) aus(); });
+  go.addEventListener("click", () => { sichern(); location.reload(); });
+  async function checkForUpdate(manual = false) {
+    if (checking) return;
+    if (!manual && document.visibilityState !== "visible") return;
+    if (!navigator.onLine) { if (manual) showInfo("Offline – Prüfung nicht möglich"); return; }
+    checking = true;
+    try {
+      const res = await fetch("index.html", { cache: "no-store" }); if (!res.ok) return;
+      const m = (await res.text()).match(/APP_VERSION = '([^']+)'/);
+      if (m && m[1] !== APP_VERSION) announce(m[1], manual);
+      else if (manual) showInfo("Version " + APP_VERSION + " ist aktuell", 4);
+    } catch (_) { if (manual) showInfo("Prüfung fehlgeschlagen"); }
+    finally { checking = false; }
+  }
+  function announce(v, manual) {
+    if (announced === v && !manual) return; announced = v;
+    sichern(); zeigeBanner("Neue Version " + v + " ist da");
+    if (manual || !tippt()) setTimeout(() => location.reload(), manual ? 1500 : 3000);
+  }
+  // Versionsnummer neben der Überschrift: antippen prüft von Hand
+  const eb = document.querySelector("header .eyebrow");
+  if (eb) { const b = document.createElement("button"); b.type = "button"; b.className = "appver"; b.textContent = "v" + APP_VERSION;
+    b.setAttribute("aria-label", "Version " + APP_VERSION + ", auf Updates prüfen"); b.addEventListener("click", () => checkForUpdate(true)); eb.append(" · ", b); }
+  window.addEventListener("pageshow", () => setTimeout(checkForUpdate, 800));
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkForUpdate(); });
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {});
+  try { const vorher = localStorage.getItem("wtp.gesehen");
+    if (vorher !== APP_VERSION) { localStorage.setItem("wtp.gesehen", APP_VERSION); if (vorher) setTimeout(() => showInfo("Version " + APP_VERSION + " ist geladen", 4), 400); } } catch (_) {}
+})();
+</script>
+</body></html>
