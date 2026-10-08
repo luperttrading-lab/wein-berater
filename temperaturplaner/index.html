@@ -1,6 +1,6 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#EADAB8" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#1A1113" media="(prefers-color-scheme: dark)">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-1-6.png"><link rel="icon" href="icon-192-1-6.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-1-7.png"><link rel="icon" href="icon-192-1-7.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Temperatur">
 <style>body{margin:0}[hidden]{display:none!important}</style></head><body><title>Wein-Temperaturplaner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1720,11 +1720,14 @@ init();
 .update.info { background: #2d2d33; color: #f2f2f7; font-weight: 500; }
 .update .btn { width: auto; min-height: 0; padding: 8px 14px; font-size: 15px; background: #06240e; color: #fff; border: 0; border-radius: 999px; }
 header { position: relative; }
-.appver { position: absolute; top: -16px; right: 0; font: 600 12px/1 var(--f-body, system-ui); color: var(--muted, #777); background: none; border: 0;
-  padding: 6px 0 6px 10px; min-height: 0; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+/* Versionsnummer auf der Höhe der Zeile „Weinberater · Temperaturplaner“ (gleiche Schrift, gleiche Linie);
+   die Polsterung vergrößert nur die Tippfläche, der negative Versatz gleicht sie aus */
+body.wizrun header .eyebrow { display: block; }
+.appver { position: absolute; top: -10px; right: 0; font: 600 11.5px/1 var(--f-body, system-ui); letter-spacing: .06em; color: var(--muted, #777);
+  background: none; border: 0; padding: 10px 0 10px 14px; min-height: 0; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
 </style>
 <script>
-const APP_VERSION = '1.6';
+const APP_VERSION = '1.7';
 (() => {
   const updateEl = document.getElementById("update"), txt = document.getElementById("update-text"), go = document.getElementById("update-go");
   let ausTimer = null, infoTimer = null, checking = false, announced = null;
