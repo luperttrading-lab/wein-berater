@@ -1,6 +1,6 @@
 /* Wein-Temperaturplaner – Service Worker. Eigene Dateien „Netz zuerst“ (Updates kommen an), Schriften „Cache zuerst“. */
 const CACHE = "temperaturplaner";
-const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./apple-touch-icon.png"];
+const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192-1-5.png", "./apple-touch-icon-1-5.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
