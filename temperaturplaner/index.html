@@ -1,6 +1,6 @@
 <!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1A1113">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-1.png"><link rel="icon" href="icon-192-2-1.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-2.png"><link rel="icon" href="icon-192-2-2.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Temperatur">
 <style>body{margin:0}[hidden]{display:none!important}</style></head><body><script>{ let t = "dark"; try { t = localStorage.getItem("wtp.theme") || "dark"; } catch (_) {} document.documentElement.dataset.theme = t; }   // Standard dunkel, Wahl wird gemerkt</script>
 <title>Wein-Temperaturplaner</title>
@@ -237,7 +237,9 @@ body.wizrun .mode { margin-top: 8px; }
 .choice .dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line-strong); }
 .wwheels { --row: 42px; --wh: 126px; display: flex; justify-content: center; align-items: center; gap: 10px; }
 .wwheels .wcol { width: min(150px, 42vw); gap: 0; padding: 10px 8px 8px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--line-strong); }
-.wwheels .wlab { font: 600 11.5px/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding-bottom: 2px; }
+.wwheels .wcol { grid-template-columns: minmax(0, 1fr); }   /* lange Beschriftung macht das Rad nicht breiter */
+.wwheels .wlab { font: 600 11.5px/1 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-bottom: 2px;
+  display: flex; justify-content: center; white-space: nowrap; }   /* passt sie nicht ganz, ragt sie gleichmäßig nach beiden Seiten */
 .wwheels .wheel { border: 0; background: transparent; border-radius: 10px; position: relative; z-index: 1; }
 .wwheels .wbox::after { z-index: 0; left: 0; right: 0; border: 1.5px solid var(--line-strong); border-radius: 10px; background: var(--panel); }
 .wwheels .wheel .wi, .wwheels .wheel .wi.above, .wwheels .wheel .wi.below { place-items: center; padding: 0; font: 500 21px/1 var(--f-num); opacity: .7; }
@@ -370,7 +372,8 @@ svg.chart * { pointer-events: none; }   /* Finger/Maus treffen immer die Grafik 
 
 /* Leiste unten */
 .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
-  background: var(--panel); border-top: 1px solid var(--line-strong); box-shadow: 0 -10px 24px -16px rgba(0,0,0,.4); }
+  background: var(--panel); border-top: 1px solid var(--line-strong); box-shadow: 0 -10px 24px -16px rgba(0,0,0,.4); transition: transform .25s ease, opacity .25s ease; }
+.dock.away { transform: translateY(115%); opacity: 0; pointer-events: none; }   /* Ablauf ist zu sehen: nichts doppelt zeigen */
 .dock button { width: 100%; max-width: 736px; margin: 0 auto; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
   border: 0; background: transparent; padding: 2px 4px; text-align: left; border-radius: 12px; }
 .dock .dt { font: 600 28px/1 var(--f-display); color: var(--accent); font-variant-numeric: tabular-nums; }
@@ -398,7 +401,7 @@ svg.chart * { pointer-events: none; }   /* Finger/Maus treffen immer die Grafik 
       <li><b>Faustregel:</b> Je kräftiger der Wein, desto wärmer – je leichter und frischer, desto kühler.</li>
     </ul>
     <p class="taste"><b>Und am Ende entscheidet dein Geschmack.</b> Die Empfehlungen sind ein guter Startpunkt, kein Gesetz. Probier ruhig ein, zwei Grad wärmer oder kühler.</p>
-    <p class="what">Der Planer sagt dir, wann der Wein wohin muss, damit er pünktlich die richtige Temperatur hat.</p>
+    <p class="what">Der Planer sagt dir, wann du mit dem Kühlen oder Erwärmen beginnen musst.</p>
     <button type="button" class="primary" id="introGo">Los geht's</button>
   </div></div>
 
@@ -443,7 +446,7 @@ svg.chart * { pointer-events: none; }   /* Finger/Maus treffen immer die Grafik 
     <div class="chart-wrap" id="chartWrap"><svg class="chart" id="chart" viewBox="0 0 680 260" role="img" aria-label="Temperaturverlauf der Methoden"></svg>
       </div>
     <div class="legend" id="legend"></div>
-    <p class="muted" id="chartNote" style="margin:0;font-size:12.5px">Dicke Linie: deine Methode. Gestrichelt: schafft es nicht pünktlich, ab jetzt gerechnet. <span id="chartWhite"></span> Helles Band: Ziel ± 1 °C.</p>
+    <p class="muted" id="chartNote" style="margin:0;font-size:12.5px">Dicke Linie: deine Methode. <span id="chartDash"></span><span id="chartWhite"></span> <span id="chartBand"></span></p>
   </div>
   </details>
 
@@ -469,9 +472,9 @@ svg.chart * { pointer-events: none; }   /* Finger/Maus treffen immer die Grafik 
     <summary><span class="t">Flasche und Wein</span><span class="v" id="sumBottle"></span></summary>
     <div class="in">
       <div class="frow"><label for="bottle">Flasche</label><select id="bottle"></select></div>
-      <div class="frow"><label for="vol">Weinmenge, Liter</label><input id="vol" type="number" step="0.05" min="0.1" inputmode="decimal"><small>Bei angebrochener Flasche die Restmenge.</small></div>
+      <div class="frow"><label for="vol">Weinmenge, Liter</label><input id="vol" type="text" inputmode="decimal" autocomplete="off"><small>Bei angebrochener Flasche die Restmenge.</small></div>
       <div class="frow"><label for="bottleMass">Gewicht der leeren Flasche (g)</label><input id="bottleMass" type="number" step="10" inputmode="numeric"><small>Standard um 500 g, schwere Premiumflaschen 900–1200 g. Schwere Flaschen brauchen länger.</small></div>
-      <div class="frow"><label for="abv">Alkohol % vol</label><input id="abv" type="number" step="0.5" min="0" max="20" inputmode="decimal"></div>
+      <div class="frow"><label for="abv">Alkohol % vol</label><input id="abv" type="text" inputmode="decimal" autocomplete="off"></div>
     </div>
   </details>
 
@@ -480,7 +483,7 @@ svg.chart * { pointer-events: none; }   /* Finger/Maus treffen immer die Grafik 
     <div class="in">
       <p class="muted" style="margin:0;font-size:13.5px">Miss nach einer Weile die Temperatur des Weins und trag sie hier ein. Der Planer rechnet dann genauer und merkt sich das auf diesem Gerät.</p>
       <div class="frow"><label for="calMin">Gemessen nach Minuten</label><input id="calMin" type="number" step="1" min="1" inputmode="numeric" placeholder="30"></div>
-      <div class="frow"><label for="calT">Gemessen °C</label><input id="calT" type="number" step="0.1" inputmode="decimal" placeholder="10,5"></div>
+      <div class="frow"><label for="calT">Gemessen °C</label><input id="calT" type="text" inputmode="decimal" autocomplete="off" placeholder="10,5"></div>
       <div class="row-btn"><button type="button" class="primary" id="calGo">Übernehmen</button><button type="button" id="calReset">Zurücksetzen</button></div>
       <p id="calOut" class="muted" style="margin:0;font-size:13px"></p>
     </div>
@@ -755,6 +758,7 @@ const $ = id => document.getElementById(id);
 const de = (n, d = 1) => { let t = n.toFixed(d).replace(".", ","); if (d === 1 && t.endsWith(",0")) t = t.slice(0, -2); return t.replace("-", "−"); };
 const deg = n => de(Math.round(n * 10) / 10) + "\u00a0°C";
 const deg0 = v => de(v) + "°";
+const decIn = v => String(v).replace(".", ",");   // Zahlenfelder mit deutschem Komma
 const minTxt = sec => Math.round(sec / 60) + "\u00a0min";   // Dekantierzeiten immer in Minuten, wie bei der Auswahl
 const degS = v => deg(Math.round(v));   // für Ergebnis und Ablauf: ganze Grad (Modell ist etwa ±1 °C genau)   // kurz für Kacheln
 const hm = d => d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
@@ -851,6 +855,13 @@ function lateOutcome(key, now, fin, tServe) {
   const B = at(s, (tServe - now) / 1000);
   return { cup: inp.inGlass && key !== "glas" ? glassRun(B).mix : B, B, tDec: null, inDec: 0 };
 }
+// Temperatur im aufgezeichneten Verlauf (Sekunden ab Start), linear dazwischen; vor dem Start: Ausgangstemperatur
+function curveAt(cv, t) {
+  if (t <= 0) return inp.T0;
+  let a = [0, inp.T0];
+  for (const q of cv) { if (q[0] >= t) return q[0] === a[0] ? q[1] : a[1] + (q[1] - a[1]) * (t - a[0]) / (q[0] - a[0]); a = q; }
+  return a[1];
+}
 function compute() {
   const now = new Date(), tDate = endDate(), tServe = targetDate(), Tm = tgt(inp.method), up = Tm > inp.T0;
   const same = Math.abs(Tm - inp.T0) < 0.3;
@@ -883,11 +894,21 @@ function compute() {
         const slow = runMethod(key, { kH: cal[m.fam] * 0.8, needWindow: false });
         const fast = runMethod(key, { kH: cal[m.fam] * 1.25, needWindow: false });
         r.D = main.tHit; r.over = main.tPlus1 !== null ? main.tPlus1 - main.tHit : null; r.Dslow = slow.tHit; r.Dfast = fast.tHit; r.win = (main.tPlus1 ?? NaN) - (main.tMinus1 ?? NaN);
-        r.mix = main.Tmix; r.start = new Date(Math.floor((tDate - r.D * 1000) / 60000) * 60000); r.late = +r.start < Math.floor(+now / 60000) * 60000;
+        r.mix = main.Tmix;
+        r.curve = runMethod(key, { record: true, recordUntil: r.D + 45 * 60, recordStep: 60, needWindow: false }).pts;
+        // Startzeit runden, wo es nichts kostet: auf 10 oder 5 min, solange der Wein beim Einschenken höchstens
+        // 0,5 °C neben dem Ziel liegt (früher oder später gestartet um die halbe Stufe). Eiskübel, Gefrierfach und
+        // Wasserbad sind schnell und kurz – dort immer minutengenau. Nie in die Vergangenheit runden.
+        const exact = Math.floor((tDate - r.D * 1000) / 60000) * 60000, nowM = Math.floor(+now / 60000) * 60000;
+        const Te = curveAt(r.curve, r.D);
+        r.step = ["eis", "wasserbad", "gefrier"].includes(key) ? 1 : [10, 5].find(g => Math.max(Math.abs(curveAt(r.curve, r.D - g * 30) - Te), Math.abs(curveAt(r.curve, r.D + g * 30) - Te)) <= 0.5) || 1;
+        let st = exact;
+        if (r.step > 1) { const d = new Date(exact), mi = d.getHours() * 60 + d.getMinutes(); st = exact + (Math.round(mi / r.step) * r.step - mi) * 60000; }
+        if (exact < nowM || st < nowM) st = exact;
+        r.start = new Date(st); r.late = +r.start < nowM;
         r.past = r.late && +tServe <= +now;   // Einschenkzeit schon vorbei
         r.Dshow = (tDate - r.start) / 1000;   // angezeigte Dauer passt genau zu angezeigtem Start und Ende
         if (r.late) Object.assign(r, { fin: new Date(+now + r.D * 1000) }, lateOutcome(key, now, new Date(+now + r.D * 1000), tServe));
-        r.curve = runMethod(key, { record: true, recordUntil: r.D + 45 * 60, recordStep: 60, needWindow: false }).pts;
       }
     }
     res[key] = r;
@@ -946,7 +967,8 @@ function stepsOf(key, c) {
 // Zu spät, aber höchstens 1 °C daneben: „knapp“ (das Modell ist etwa ±1 °C genau, mehr Alarm wäre Scheingenauigkeit)
 const near = r => r.late && !r.past && Math.abs(Math.round(r.cup) - Math.round(inp.target)) <= 1;
 const statt = r => Math.round(r.cup) === Math.round(inp.target) ? "" : ` statt ${degS(inp.target)}`;
-const lateWord = r => near(r) ? "etwas spät" : "zu spät";
+// Gerundet genau das Ziel: „knapp“ – „etwas spät“ wäre bei getroffenem Ziel irreführend
+const lateWord = r => !near(r) ? "zu spät" : statt(r) ? "etwas spät" : "knapp";
 // Zu spät: Ab wann hätte der Wein die Zieltemperatur, wenn man jetzt startet und später einschenkt?
 // (mit Karaffe: Flasche fertig, dann die volle Karaffenzeit). 3 min Luft zum Lesen und Tippen, dann auf 5 min
 // aufgerundet wie das Uhrzeit-Rad – sonst ist der Start beim Tippen schon wieder vorbei.
@@ -961,7 +983,8 @@ function planRow(key, c) {
   // Rotwein, dem Luft guttut: Karaffe als Methode empfehlen (Weiß/Rosé: Dekantieren bringt meist nichts)
   const rec = key === "karaffe" && r.valid && decGood();
   const sub = !r.valid ? `<span class="sub">${r.why}</span>` : rec ? `<span class="sub rec">empfohlen: ${inp.wine} wird mit Luft in der Karaffe besser</span>` : "";
-  const x = hasOpts(key) && !r.locked ? `<button type="button" class="mx" data-x="${key}" aria-expanded="${optsOpen && inp.method === key}" aria-label="Einstellungen ${m.name}"></button>` : "";
+  // Pfeil nur an der gewählten Methode: Bei den anderen würde er die Methode gleich mit umstellen
+  const x = hasOpts(key) && !r.locked && key === inp.method ? `<button type="button" class="mx" data-x="${key}" aria-expanded="${optsOpen && inp.method === key}" aria-label="Einstellungen ${m.name}"></button>` : "";
   return `<div class="mrow" data-row="${key}"><button type="button"${r.locked ? " disabled" : ""} class="m${r.valid ? "" : " off"}${r.valid && r.late ? " late" : ""}" data-method="${key}" aria-pressed="${inp.method === key}"
     aria-label="${m.name}: ${r.valid ? (r.late ? `${lateWord(r)}, um ${hm(c.tServe)} etwa ${degS(r.cup)}${statt(r)}` : `Start ${hm(r.start)}, Dauer ${dur(r.Dshow)}`) : r.why}">
     <span class="key" style="background:var(--s-${key})"></span><span class="n">${m.name}</span><span class="r">${right}</span>${sub}</button>${x}</div>`;
@@ -1065,8 +1088,8 @@ function planBody(c, orig) {
     const ok = ORDER.map(k => c.res[k]).filter(x => x.valid && !x.late && x.key !== inp.method).sort((a, b) => a.start - b.start);
     const why = c.dec ? (skip
         ? `Das Umfüllen war für ${hm(c.tDate)} geplant, zum ${c.up ? "Wärmen" : "Kühlen"} ist keine Zeit mehr. ${r.inDec >= 300 ? `Gleich umfüllen: Der Wein bekommt ${r.noTime ? `noch ${minTxt(r.inDec)} Luft statt ${minTxt(inp.decMin * 60)}` : `${minTxt(r.inDec)} Luft wie geplant`} und hat` : "Zum Dekantieren bleibt auch keine Zeit. Umgefüllt und gleich eingeschenkt hat er"} um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW || " in der Karaffe"}${statt(r)}.`
-        : `Etwas spät: Der Wein hat um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW || " in der Karaffe"}${statt(r)}${statt(r) ? " – das merkt man kaum" : ""}.`)
-      : near(r) ? `Etwas spät: Startest du jetzt, hat der Wein um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW}${statt(r)}${statt(r) ? " – das merkt man kaum" : ""}.`
+        : `${statt(r) ? "Etwas spät" : "Knapp"}: Der Wein hat um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW || " in der Karaffe"}${statt(r)}${statt(r) ? " – das merkt man kaum" : ""}.`)
+      : near(r) ? `${statt(r) ? "Etwas spät" : "Knapp"}: Startest du jetzt, hat der Wein um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW}${statt(r)}${statt(r) ? " – das merkt man kaum" : ""}.`
       : `Für ${hm(c.tServe)} ist es mit dieser Methode zu spät. Startest du jetzt, hat er um ${hm(c.tServe)} etwa ${degS(r.cup)}${glassW} statt ${goal}.`;
     const ls = laterServe(r, c);
     h += `<div class="note ${near(r) ? "warn" : "bad"}">${why}` + (ok.length ? ` Pünktlich klappt es mit ${ok.map(a => `<strong>${METHODS[a.key].name}</strong> (ab ${hm(a.start)})`).join(" oder ")}.` : "") +
@@ -1088,7 +1111,9 @@ function planBody(c, orig) {
   if (c.sv && g1 === null && Math.abs(inp.Tair - inp.target) > 1) L.push(`<b>Im Glas:</b> Er bleibt über 40\u00a0min nah an ${degS(inp.target)}.`);
   else if (g1 && !c.sv) L.push(`<b>Im Glas:</b> Nach etwa ${dur(g1)} ist er 1\u00a0°C ${gw} als ${degS(inp.target)}.`);   // mit „Ziel im Glas“ steht das schon im Ablauf
   const stp = c.steps ? c.steps.filter(q => Math.round(q[1]) !== Math.round(c.Tm) && Math.round(q[1]) !== Math.round(inp.T0)) : [];
-  if (stp.length && r.D > 20 * 60) { const [t, T] = stp.reduce((a, q) => Math.abs(q[0] - r.D / 2) < Math.abs(a[0] - r.D / 2) ? q : a);
+  // Messpunkt nur, solange der Wein noch läuft (mindestens 5 min vor dem Ende) – nicht nach dem Einschenken
+  const stpIn = r.late ? [] : stp.filter(q => q[0] <= r.Dshow - 5 * 60);
+  if (stpIn.length && r.Dshow > 20 * 60) { const [t, T] = stpIn.reduce((a, q) => Math.abs(q[0] - r.Dshow / 2) < Math.abs(a[0] - r.Dshow / 2) ? q : a);
     L.push(`<b>Zum Nachmessen:</b> ${Math.round(t / 60)}\u00a0min nach dem Start hat der Wein ${where || "in der Flasche"} etwa ${degS(T)}.`); }
   if (r.mix !== undefined && Math.round(r.mix) !== Math.round(inp.T0)) L.push(`<b>${inp.method === "glas" ? "Beim Einschenken" : "Beim Umfüllen"}:</b> ${inp.method === "glas" ? "Das Glas" : "Die Karaffe"} ${r.mix > inp.T0 ? "wärmt" : "kühlt"} den Wein sofort von ${degS(inp.T0)} auf ${degS(r.mix)}.`);
   const td = dewPoint(inp.Tair, inp.rh);
@@ -1171,7 +1196,7 @@ function renderPlan(c) {
     const soon = r.valid && (r.late || (r.start - c.now) / 60000 <= 15);
     $("startSlot").innerHTML = tr ? `<button type="button" id="stopTrack">Beenden</button>` : soon && !tracking && !shifted(c) && !lateSkip(r, c) ? `<button type="button" class="primary" id="startNow">${r.late ? "Trotzdem starten" : "Gestartet"}</button>` : "";
     const hd = $("hdet"); if (hd) hd.addEventListener("toggle", () => { heroDetOpen = hd.open; });
-    const b = $("startNow"); if (b) b.onclick = () => { tracking = { t: Date.now(), method: inp.method, inp: Object.assign({}, inp, { target: c.Tm }), cal: Object.assign({}, cal) }; store.set("track", tracking); render(); };
+    const b = $("startNow"); if (b) b.onclick = () => { tracking = { t: Date.now(), method: inp.method, inp: Object.assign({}, inp, { target: c.Tm }), cal: Object.assign({}, cal), end: +c.tDate, serve: +c.tServe }; store.set("track", tracking); render(); };
   }
   placeOpts();
   const st = $("stopTrack"); if (st) st.onclick = () => { tracking = null; store.set("track", null); render(); };
@@ -1206,11 +1231,15 @@ function trackState() {
   const full = M.simulate(s, { Ttarget: tr.inp.target, kH: k, tmax: 16 * 3600 });
   const now = el > 6 ? M.simulate(s, { Ttarget: tr.inp.target, kH: k, tStop: el, tmax: el + 60 }).T_at : full.Tmix;
   const eta = full.tHit !== null ? new Date(tr.t + full.tHit * 1000) : null;
-  const tT = (endDate() - tr.t) / 1000;
+  // Herausnehmen/Umfüllen zur Zeit, die beim Start galt – auch wenn „heute 19:00“ danach auf morgen springt
+  const outT = tr.end ? new Date(tr.end) : endDate(), tT = (outT - tr.t) / 1000;
   const atTarget = tT > 60 ? M.simulate(s, { Ttarget: tr.inp.target, kH: k, tStop: tT, tmax: tT + 60 }).T_at : null;
   // Trotzdem gestartet (zu spät): Herausnehmen/Umfüllen bleibt bei der geplanten Zeit
-  const outT = endDate(), late = !!eta && +eta > +outT + 60000 && tT > 60;
-  return { late, outT, el, now, eta, left: full.tHit !== null ? full.tHit - el : null, reached: full.tHit !== null && el >= full.tHit, atTarget, diff: atTarget !== null ? atTarget - tr.inp.target : 0, T: tr.inp.target, key: tr.method, dec: !!tr.inp.decant };
+  const late = !!eta && +eta > +outT + 60000 && tT > 60;
+  const out = OUT.includes(tr.method), dec = !!tr.inp.decant, due = Date.now() >= +outT - 60000, done = Date.now() >= +outT + 2 * 60000;
+  const act = dec ? `${out ? "herausnehmen und " : ""}in die Karaffe umfüllen` : out ? "herausnehmen und einschenken" : tr.method === "glas" ? "trinken" : "einschenken";
+  return { late, outT, el, now, eta, left: full.tHit !== null ? full.tHit - el : null, reached: full.tHit !== null && el >= full.tHit, atTarget, diff: atTarget !== null ? atTarget - tr.inp.target : 0,
+    T: tr.inp.target, key: tr.method, dec, due, done, act, serve: tr.serve ? new Date(tr.serve) : null, up: tr.inp.target > tr.inp.T0 };
 }
 // Dekantier-Empfehlung nach Körper des Rotweins (Schema: leicht 20–30 min, mittel 30–60, kräftig 60 min und mehr –
 // Wine Folly, „How long to decant wine“). Zuordnung der Rebsorten zum Körper: eigene Einordnung, kein Einzelnachweis.
@@ -1289,14 +1318,21 @@ const PLACE_IN = { kuehlschrank: "im Kühlschrank", gefrier: "im Gefrierfach", e
 const OUT = ["wasserbad", "eis", "gefrier", "kuehlschrank"];   // Methoden, bei denen die Flasche herausgenommen wird
 function trackingHtml(t) {
   const out = OUT.includes(t.key);
+  // Zur geplanten Zeit: klare Ansage, danach „Fertig“. Die Verfolgung endet 30 min nach dem Einschenken von selbst.
+  if (t.done) return `<div class="track"><div style="font:600 22px/1.2 var(--f-num)">Fertig</div>
+    <div>${t.dec && t.serve && Date.now() < +t.serve ? `Der Wein ist in der Karaffe. Um <strong>${hm(t.serve)}</strong> einschenken.` : "Zum Wohl!"}</div></div>`;
+  if (t.due) return `<div class="track"><div style="font:600 22px/1.2 var(--f-num)">jetzt etwa ${degS(t.now)}</div>
+    <div><strong>Jetzt ${t.act}.</strong>${t.dec && t.serve ? ` Um ${hm(t.serve)} einschenken.` : ""}</div></div>`;
+  // Gibt an, was um die geplante Zeit herauskäme, wenn man nicht eingreift: Richtung beachten
+  const off = t.diff > 0 ? (t.up ? "also schon zu warm" : "also noch zu warm") : (t.up ? "also noch zu kalt" : "also schon zu kalt");
   return `<div class="track"><div style="font:600 22px/1.2 var(--f-num)">jetzt etwa ${degS(t.now)}</div>
     <div>${t.late && !t.reached ? `Um <strong>${hm(t.outT)}</strong> ${t.dec ? `${out ? "herausnehmen und " : ""}in die Karaffe umfüllen` : out ? "herausnehmen und einschenken" : "einschenken"}, dann etwa ${degS(t.atTarget)} in der Flasche.` : t.reached ? `${degS(t.T)} erreicht um ${hm(t.eta)}.${t.dec ? ` <strong>Jetzt ${out ? "herausnehmen und " : ""}in die Karaffe umfüllen.</strong>` : out ? " <strong>Jetzt herausnehmen.</strong>" : ""}` : t.eta ? `${degS(t.T)} um <strong>${hm(t.eta)}</strong> (in ${dur(t.left)})${t.dec ? ", dann in die Karaffe umfüllen" : out ? ", dann herausnehmen" : ""}.` : "Das Ziel wird mit dieser Methode nicht erreicht."}</div>
-    ${t.atTarget !== null && Math.abs(t.diff) >= 0.8 && !t.reached && !t.late ? `<div>${t.dec ? "Zum Umfüllen" : "Zum Einschenken"} um ${hm(endDate())} hätte er sonst etwa <strong>${degS(t.atTarget)}</strong>, ${t.diff > 0 ? "also noch zu warm" : "also zu kalt"}.</div>` : ""}</div>`;
+    ${t.atTarget !== null && Math.abs(t.diff) >= 0.8 && !t.reached && !t.late ? `<div>${t.dec ? "Zum Umfüllen" : t.key === "glas" ? "Zum Trinken" : "Zum Einschenken"} um ${hm(t.outT)} hätte er sonst etwa <strong>${degS(t.atTarget)}</strong>, ${off}.</div>` : ""}</div>`;
 }
 function renderOpts() {
   const B = M.BOTTLES, D = M.DECANTERS, G = M.GLASSES;
   const sel = (id, obj, val) => `<select id="${id}">${Object.entries(obj).map(([k, v]) => `<option value="${k}"${k === val ? " selected" : ""}>${v.name}</option>`).join("")}</select>`;
-  const num = (id, lab, step, hint = "") => `<div class="frow"><label for="${id}">${lab}</label><input id="${id}" type="number" step="${step}" inputmode="decimal" value="${inp[id]}">${hint ? `<small>${hint}</small>` : ""}</div>`;
+  const num = (id, lab, step, hint = "") => `<div class="frow"><label for="${id}">${lab}</label><input id="${id}" type="text" inputmode="decimal" autocomplete="off" value="${decIn(inp[id])}">${hint ? `<small>${hint}</small>` : ""}</div>`;
   const chk = (id, lab) => `<label class="check"><input type="checkbox" id="${id}"${inp[id] ? " checked" : ""}>${lab}</label>`;
   let h = "";
   const wup = tgt(inp.method) > inp.T0;   // Richtung: erwärmen oder kühlen
@@ -1323,12 +1359,15 @@ function renderOpts() {
     case "eis": h = `${chk("salt", "Salz ins Eiswasser")}${inp.salt ? `<div class="frow" style="grid-template-columns:minmax(0,1fr) 60%"><label for="saltG">Salz pro Liter Wasser</label><select id="saltG">${SALT.map(g => `<option value="${g}"${g === +inp.saltG ? " selected" : ""}>${g} g → ${de(Math.round(brineT(g)))}\u00a0°C</option>`).join("")}</select>
         <small>Kübel voll Eis, nur so viel Wasser, dass die Flasche umspült ist, Salz einrühren. Die Temperatur gilt, solange noch Eis schwimmt und umgerührt wird; im Kübel meist 1–3 °C wärmer. 1 Esslöffel ≈ 15–20 g. Über 300 g/l wird es nicht kälter: −21 °C ist die Grenze.</small></div>` : ""}${chk("estir", "Flasche alle paar Minuten drehen (geht etwas schneller)")}`; break;
   }
+  // Beim Tippen in ein Zahlenfeld wird neu gezeichnet: Feld, Eingabe (auch „4,“) und Cursor bleiben erhalten
+  const ae = document.activeElement, keep = ae && ae.id && ae.tagName === "INPUT" && ae.type === "text" && ($("opts").contains(ae) || $("glassRow").contains(ae)) ? { id: ae.id, v: ae.value, s: ae.selectionStart } : null;
   $("opts").innerHTML = h;
   // Glas fürs Ziel im Glas; bei der Methode „Glas“ steht es schon unter den Optionen
   $("glassRow").innerHTML = inp.inGlass && inp.method !== "glas"
     ? `<select id="glass" aria-label="Glas">${Object.entries(G).map(([k, v]) => `<option value="${k}"${k === inp.glass ? " selected" : ""}>${v.name.replace(/ \(.*\)$/, "")}</option>`).join("")}</select><span class="ml"><input id="glassVol" type="number" step="10" inputmode="decimal" value="${inp.glassVol}" aria-label="Wein pro Glas in Milliliter"><span aria-hidden="true">ml</span></span>` : "";
   $("glassRow").querySelectorAll("input,select").forEach(el => el.addEventListener("input", onField));
   $("opts").querySelectorAll("input,select").forEach(el => el.addEventListener("input", onField));
+  if (keep && $(keep.id)) { const e = $(keep.id); e.value = keep.v; e.focus({ preventScroll: true }); try { e.setSelectionRange(keep.s, keep.s); } catch (_) {} }
   $("opts").querySelectorAll("#vessel button").forEach(b => b.onclick = () => { inp.bathVol = +b.dataset.v; save(); renderOpts(); render(); });
 }
 const CHART = { l: 34, r: 10, t: 34, b: 28 };
@@ -1361,7 +1400,7 @@ function renderChart(c) {
   const tMin = Math.max(c.tDate.getTime() - win * 1.08, first0 - 0.06 * (tEnd0 - first0)), tEnd = Math.max(c.tDate.getTime() + Math.max(8 * 60000, win * 0.15), c.tServe.getTime() + 8 * 60000);
   const Tb = c.sv ? inp.target : c.dec ? c.dec.S : c.Tm, glassEnd = c.after ? c.after[c.after.length - 1][1] : Tb;
   const aV = c.after ? c.after.map(q => q[1]) : [];   // Karaffe/Glas nach dem Umfüllen mit einschließen
-  const yMin = Math.min(c.up ? inp.T0 - 1 : Math.min(c.Tm, glassEnd) - 2, ...aV.map(v => v - 1)), yMax = Math.max(c.up ? Math.max(Tb, glassEnd) + 1.5 : inp.T0 + 1, ...aV.map(v => v + 1), Tb + 1.5);
+  const yMin = Math.min(c.up ? inp.T0 - 1 : Math.min(c.Tm, glassEnd) - 2, ...aV.map(v => v - 1), c.Tm - 1.2), yMax = Math.max(c.up ? Math.max(Tb, glassEnd) + 1.5 : inp.T0 + 1, ...aV.map(v => v + 1), Tb + 1.5, c.Tm + 1.2);
   const { l, r: R, t: T0, b } = CHART, pw = W - l - R, ph = H - T0 - b;
   const X = ms => l + (ms - tMin) / (tEnd - tMin) * pw, Y = v => T0 + (yMax - v) / (yMax - yMin) * ph;
   let s = `<defs><clipPath id="plot"><rect x="${l}" y="${T0}" width="${pw}" height="${ph}"/></clipPath></defs>`;
@@ -1370,7 +1409,11 @@ function renderChart(c) {
   const hours = (tEnd - tMin) / 3600000, perTick = W < 520 ? 4.5 : 8, step = [5, 10, 15, 30, 60, 120, 180].find(m => hours * 60 / m <= perTick) || 240;
   const first = new Date(tMin); first.setMinutes(Math.ceil(first.getMinutes() / step) * step, 0, 0);
   for (let d = first.getTime(); d < tEnd; d += step * 60000) if (X(d) < W - R - 14) s += `<text x="${X(d)}" y="${H - 10}" text-anchor="middle">${hm(new Date(d))}</text>`;
-  s += `<rect class="band" x="${l}" width="${pw}" y="${Y(Tb + 1)}" height="${Y(Tb - 1) - Y(Tb + 1)}"/>`;
+  // Band „bis 1 Grad neben dem Ziel“ jeweils dort, wo dieses Ziel gilt: bis zum Einschenken bzw. Umfüllen für die
+  // Flasche (dorthin zielen die Linien), danach für Glas bzw. Karaffe
+  const band = (x0, x1, v) => { x0 = Math.max(l, x0); x1 = Math.min(W - R, x1); if (x1 > x0) s += `<rect class="band" x="${x0}" width="${x1 - x0}" y="${Y(v + 1)}" height="${Y(v - 1) - Y(v + 1)}"/>`; };
+  if (c.after) { band(l, X(+c.tDate), c.Tm); band(X(+(c.dec && inp.decMin ? c.tServe : c.tDate)), W - R, Tb); }
+  else band(l, W - R, Tb);
   const labs = [];   // [x, Text, Farbe, Priorität] – oben im Streifen, zwei Zeilen, nichts überlappt
   if (c.tGuest && +c.tGuest > tMin) { s += `<line class="now" stroke-dasharray="3 3" x1="${X(c.tGuest)}" x2="${X(c.tGuest)}" y1="${T0}" y2="${H - b}"/>`; labs.push([X(c.tGuest), "Gäste", "var(--muted)", 3]); }
   s += `<line class="tline" x1="${X(c.tDate)}" x2="${X(c.tDate)}" y1="${T0}" y2="${H - b}"/>`;
@@ -1404,7 +1447,9 @@ function renderChart(c) {
   }
   s += `<line class="cross" id="cross" x1="0" x2="0" y1="${T0}" y2="${H - b}" visibility="hidden"/><rect id="hit" x="${l}" y="${T0}" width="${pw}" height="${ph}" fill="transparent"/>`;
   svg.innerHTML = s;
-  $("chartWhite").textContent = !c.after ? "" : `Helle Linie: der Wein ${c.dec && inp.decMin ? "in der Karaffe" + (c.sv ? " und im Glas" : "") : "im Glas"}${sel.late ? ", bei pünktlichem Start" : ""}.`;
+  $("chartDash").textContent = list.some(r => r.late) ? "Gestrichelt: schafft es nicht pünktlich, ab jetzt gerechnet. " : "";
+  $("chartBand").textContent = c.after ? `Helles Band: bis 1 Grad neben dem Ziel – bis zum ${c.dec ? "Umfüllen" : "Einschenken"} für die Flasche, danach ${c.sv ? "im Glas" : "in der Karaffe"}.` : "Helles Band: bis 1 Grad neben dem Ziel.";
+  $("chartWhite").textContent = !c.after ? "" :`Helle Linie: der Wein ${c.dec && inp.decMin ? "in der Karaffe" + (c.sv ? " und im Glas" : "") : "im Glas"}${sel.late ? ", bei pünktlichem Start" : ""}.`;
   L.innerHTML = list.slice().sort((a, b) => a.start - b.start).map(r => `<span${r.late && r.key !== inp.method ? ' class="late"' : ""}><i${r.late ? ' class="dash"' : ""} style="background-color:var(--s-${r.key});height:${r.key === inp.method ? 5 : r.late ? 2 : 3}px"></i>${r.key === inp.method ? "<b>" : ""}${METHODS[r.key].name}, ${r.late ? `ab jetzt (${lateWord(r)})` : `Start ${hm(r.start)}`}${r.key === inp.method ? "</b>" : ""}</span>`).join("")
     + (c.dec ? `<span><i style="background:var(--text);height:5px"></i>${inp.decMin ? "in der Karaffe, dann " : ""}${c.sv ? "im Glas" : "in der Karaffe"} (${degS(c.Tm)} → ${degS(c.sv ? inp.target : c.dec.S)})</span>`
       : c.sv ? `<span><i style="background:var(--text);height:5px"></i>im Glas nach dem Einschenken (${degS(c.Tm)} → ${degS(inp.target)})</span>` : "");
@@ -1507,7 +1552,9 @@ function renderDock(c) {
   const r = c.res[inp.method], m = METHODS[inp.method];
   let t = "–", txt = "";
   const tr = tracking && tracking.method === inp.method ? trackState() : null;
-  if (tr && tr.late && !tr.reached) { t = hm(tr.outT); txt = `<b>${m.name} läuft</b>um ${hm(tr.outT)} ${tr.dec ? "umfüllen" : OUT.includes(tr.key) ? "herausnehmen" : "einschenken"} · etwa ${degS(tr.atTarget)}`; }
+  if (tr && tr.done) { t = hm(tr.outT); txt = `<b>${m.name} · fertig</b>${tr.dec && tr.serve && Date.now() < +tr.serve ? `um ${hm(tr.serve)} einschenken` : "zum Wohl"}`; }
+  else if (tr && tr.due) { t = "jetzt"; txt = `<b>${m.name} läuft</b>jetzt ${tr.act}`; }
+  else if (tr && tr.late && !tr.reached) { t = hm(tr.outT); txt = `<b>${m.name} läuft</b>um ${hm(tr.outT)} ${tr.dec ? "umfüllen" : OUT.includes(tr.key) ? "herausnehmen" : "einschenken"} · etwa ${degS(tr.atTarget)}`; }
   else if (tr) { t = tr.eta ? hm(tr.eta) : "–"; txt = `<b>${m.name} läuft</b>${tr.reached ? (tr.dec ? "jetzt in die Karaffe umfüllen" : OUT.includes(tr.key) ? "jetzt herausnehmen" : "fertig") : tr.eta ? `${degS(tr.T)} in ${dur(tr.left)}${tr.dec ? ", dann umfüllen" : OUT.includes(tr.key) ? ", dann herausnehmen" : ""}` : "Ziel wird nicht erreicht"}`; }
   else if (c.decBad) txt = `<b>Zu lange in der Karaffe</b>Zeit in der Karaffe kürzer stellen`;
   else if (c.same) txt = `<b>Wein hat schon Zieltemperatur</b>`;
@@ -1532,6 +1579,9 @@ function renderDock(c) {
 }
 function render() {
   if (wizRunning()) return;
+  // Verfolgung endet von selbst: 30 min nach dem Einschenken (dann springt auch die Einschenkzeit auf morgen),
+  // ältere Verfolgungen ohne gespeicherte Zeiten nach 12 h
+  if (tracking && Date.now() > (tracking.serve ? tracking.serve + 30 * 60000 : tracking.t + 12 * 3600e3)) { tracking = null; store.set("track", null); }
   if (ui.mode === "wiz") renderSum();
   last = compute();
   // Gewählte Methode passt grundsätzlich nicht mehr (z. B. Erwärmen statt Kühlen): passende wählen
@@ -1545,7 +1595,17 @@ function render() {
     if (fv !== null) { const n = fv === "on" ? d.querySelector(".decOn") : d.querySelector(`.decChips button[data-v="${fv}"]`); if (n) n.focus({ preventScroll: true }); } }
   document.querySelectorAll("#t0chips button").forEach(b => { const v = b.dataset.v === "raum" ? inp.Tair : +b.dataset.v; b.setAttribute("aria-pressed", String(v === inp.T0));
     if (b.dataset.v === "raum") b.textContent = `Raumtemperatur ${de(inp.Tair)}°`; });
+  dockSync();
 }
+// Leiste unten nur, solange der erste Schritt des Ablaufs nicht zu sehen ist – sonst stünde alles doppelt da
+function dockSync() {
+  const d = $("dock"), b = $("pselBody"), tgt = b && (b.querySelector(".tl li, .track, .note") || $("psel"));
+  let away = false;
+  if (tgt && tgt.getClientRects().length) { const r = tgt.getBoundingClientRect(); away = r.top >= 0 && r.bottom <= innerHeight - d.offsetHeight; }
+  d.classList.toggle("away", away); d.inert = away;
+}
+addEventListener("scroll", () => requestAnimationFrame(dockSync), { passive: true });
+addEventListener("resize", dockSync);
 
 // ----------------------------------------------------------------- Eingaben
 function save() { store.set("inp", inp); }
@@ -1554,11 +1614,13 @@ const later = () => { save(); clearTimeout(timer); timer = setTimeout(render, 90
 function onField(e) {
   const el = e.target, id = el.id;
   if (el.type === "checkbox") { inp[id] = el.checked; save(); renderOpts(); render(); return; }
-  if (el.type === "number") { const v = parseFloat(String(el.value).replace(",", ".")); if (!isFinite(v)) return; inp[id] = v; }
+  if (el.type === "number" || el.inputMode === "decimal") { const raw = String(el.value).trim().replace(",", ".").replace("−", "-");
+    if (/[.-]$/.test(raw)) return;   // „0,“ oder „-“: erst weitertippen lassen
+    const v = parseFloat(raw); if (!isFinite(v) || (id === "vol" && v < 0.1)) return; inp[id] = v; }
   else inp[id] = el.value;
   if (id === "saltG") inp.saltG = +el.value;
   if (id === "wine") { const w = WINES.find(x => x[1] === el.value); if (w) { inp.color = w[0]; inp.target = Math.round((w[2] + w[3]) / 2); W.target.set(inp.target, true); } inp.wine = el.value; if (inp.decant) decApplyRec(); }
-  if (id === "bottle") { const b = M.BOTTLES[el.value]; inp.vol = b.V; inp.bottleMass = Math.round(b.m * 1000); $("vol").value = inp.vol; $("bottleMass").value = inp.bottleMass; }
+  if (id === "bottle") { const b = M.BOTTLES[el.value]; inp.vol = b.V; inp.bottleMass = Math.round(b.m * 1000); $("vol").value = decIn(inp.vol); $("bottleMass").value = inp.bottleMass; }
   if (id === "decanter") { inp.decMass = Math.round(M.DECANTERS[el.value].m * 1000); const dm = $("decMass"); if (dm) dm.value = inp.decMass; }
   later();
 }
@@ -1587,7 +1649,7 @@ function dirText(Tm) {
   if (Math.abs(Tm - inp.T0) < 0.3) return "Der Wein hat schon etwa die richtige Temperatur.";
   // Zielwert der Flasche weicht vom Wunsch ab (Glas/Karaffe wärmen nach): Das wird gleich mit erklärt
   const up = Tm > inp.T0, diff = Math.round(Tm) !== Math.round(inp.target), verb = up ? "erwärmen" : "kühlen";
-  const tail = diff ? ` – ${decOn() ? "Karaffe und Glas bringen" : "das Glas bringt"} ihn auf ${degS(inp.target)}` : "";
+  const tail = diff ? ` – ${decOn() ? "Karaffe und Glas bringen" : "das Glas bringt"} den Wein auf ${degS(inp.target)}` : "";
   if (Math.round(Tm) === Math.round(inp.T0)) return `${up ? "▲" : "▼"} ${diff ? "Flasche" : "Wein"} nur ganz leicht ${verb}${tail}`;
   return `${up ? "▲" : "▼"} ${diff ? "Flasche" : "Wein"} von ${degS(inp.T0)} auf ${degS(Tm)} ${verb}${tail}`;
 }
@@ -1691,7 +1753,7 @@ function init() {
   $("t0chips").querySelectorAll("button").forEach(b => b.onclick = () => { const room = b.dataset.v === "raum";
     inp.T0 = room ? inp.Tair : +b.dataset.v; W.T0.set(inp.T0, true); save(); render(); });   // Raumtemperatur: einmal übernehmen, nicht koppeln
   for (const id of ["wine", "rh", "airflow", "surface", "bottle", "vol", "bottleMass", "abv"]) {
-    const el = $(id); el.value = inp[id]; el.addEventListener("input", onField); el.addEventListener("change", onField);
+    const el = $(id); el.value = el.inputMode === "decimal" ? decIn(inp[id]) : inp[id]; el.addEventListener("input", onField); el.addEventListener("change", onField);
   }
   $("inGlass").checked = !!inp.inGlass; $("inGlass").addEventListener("change", onField);
   $("calGo").onclick = calibrate;
@@ -1773,7 +1835,7 @@ header { position: relative; }
 .appver { text-decoration: underline dotted; text-underline-offset: 3px; }
 </style>
 <script>
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.2';
 (() => {
   const updateEl = document.getElementById("update"), txt = document.getElementById("update-text"), go = document.getElementById("update-go");
   let ausTimer = null, infoTimer = null, checking = false, announced = null;
