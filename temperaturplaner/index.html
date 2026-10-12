@@ -1,6 +1,6 @@
 <!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1A1113">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-5.png"><link rel="icon" href="icon-192-2-5.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-6.png"><link rel="icon" href="icon-192-2-6.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Temperatur">
 <style>body{margin:0}[hidden]{display:none!important}</style></head><body><script>{ let t = "dark"; try { t = localStorage.getItem("wtp.theme") || "dark"; } catch (_) {} document.documentElement.dataset.theme = t; }   // Standard dunkel, Wahl wird gemerkt</script>
 <title>Wein-Temperaturplaner</title>
@@ -39,7 +39,10 @@
 
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--text); font: 400 15px/1.45 var(--f-body); }
-.wrap { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 110px; display: grid; gap: 12px; }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 110px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }   /* Spalte nie breiter als der Bildschirm */
+/* Fragen 1–4: Die Leiste unten ist ausgeblendet, also auch kein Platz dafür. Passt alles auf den Bildschirm, lässt sich nichts verschieben. */
+body.wizrun .wrap { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+html:has(> body.wizrun), body.wizrun { overscroll-behavior: none; }
 h1 { font: 600 clamp(24px, 6.5vw, 32px)/1.1 var(--f-display); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
 .eyebrow { font: 600 11.5px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; min-width: 0; display: grid; gap: 12px; }
@@ -196,9 +199,13 @@ button.primary:focus-visible { outline: 2px solid var(--text); outline-offset: 3
 #allIn, #outBox { display: contents; }
 #allIn[hidden], #outBox[hidden] { display: none; }
 .mode { display: inline-flex; gap: 2px; padding: 3px; margin-top: 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); }
+/* Schmale Handys (360 px und weniger): Umschalter darf nicht breiter als der Bildschirm werden */
+.mode { max-width: 100%; } .mode button { min-width: 0; }
+@media (max-width: 380px) { .mode button { padding: 6px 8px; font-size: 12px; } }
+@media (max-width: 340px) { .mode button { padding: 6px 6px; font-size: 11.5px; letter-spacing: -.01em; } }
 .mode button { min-height: 36px; padding: 6px 13px; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--muted); }
 .mode button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
-.wiz { gap: 12px; }
+.wiz { gap: 10px; grid-template-columns: minmax(0, 1fr); }   /* knapp gehalten: Frage 2 passt so auch als App auf ein iPhone 12–15 */
 .toprow { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px; }
 .toprow .eyebrow { margin-bottom: 0; letter-spacing: .1em; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .hdtools { display: flex; align-items: center; gap: 12px; flex: none; }
@@ -237,10 +244,11 @@ button.primary:focus-visible { outline: 2px solid var(--text); outline-offset: 3
 .intro:has(.why[open]) .pic { min-height: 20vh; }   /* „Warum …“ offen: Bild kleiner, Text passt meist ohne Scrollen */
 .themeBtn svg { width: 16px; height: 16px; }
 body.wizrun .mode { margin-top: 8px; }
-.wiz .prog { display: flex; align-items: center; gap: 6px; font: 600 12px/1 var(--f-body); color: var(--muted); }
-.wiz .prog i { width: 22px; height: 4px; border-radius: 2px; background: var(--line-strong); }
-.wiz .prog i.on { background: var(--accent); }
-.wiz .q { font: 600 21px/1.25 var(--f-display); margin: 0; text-wrap: balance; }
+.wiz .prog, .rhead .prog { display: flex; align-items: center; gap: 6px; font: 600 12px/1 var(--f-body); color: var(--muted); }
+.wiz .prog i, .rhead .prog i { width: 22px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+.wiz .prog i.on, .rhead .prog i.on { background: var(--accent); }
+.wiz .q, .rhead .q { font: 600 21px/1.25 var(--f-display); margin: 0; text-wrap: balance; }
+.rhead { display: grid; gap: 10px; margin-bottom: 6px; }   /* Ergebnis nach Frage 4: gleiche Leiste, alles erledigt */
 .wiz .sub { text-wrap: balance; }
 .wiz .sub { margin: -6px 0 0; color: var(--muted); font-size: 13.5px; }
 .choices { display: grid; gap: 8px; }
@@ -250,12 +258,12 @@ body.wizrun .mode { margin-top: 8px; }
 #wzExactBox[hidden] { display: none; }
 .choice { min-height: 56px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line-strong); font-size: 15.5px; font-weight: 600;
   display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; text-align: left; }
-.choices.c3 .choice { flex-direction: column; justify-content: center; text-align: center; min-height: 76px; gap: 6px; }
+.choices.c3 .choice { flex-direction: column; justify-content: center; text-align: center; min-height: 66px; gap: 5px; }
 .choice small { font: 500 13px/1.2 var(--f-num); color: var(--muted); }
 .choice[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); background: var(--panel); }
 .choice .dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line-strong); }
-.wwheels { --row: 42px; --wh: 126px; display: flex; justify-content: center; align-items: center; gap: 10px; }
-.wwheels .wcol { width: min(150px, 42vw); gap: 0; padding: 10px 8px 8px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--line-strong); }
+.wwheels { --row: 39px; --wh: 117px;   /* --row muss zu row: 39 in makeWheel passen */ display: flex; justify-content: center; align-items: center; gap: 10px; }
+.wwheels .wcol { width: min(150px, 42vw); min-width: 0; gap: 0; padding: 10px 8px 8px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--line-strong); }
 .wwheels .wcol { grid-template-columns: minmax(0, 1fr); }   /* lange Beschriftung macht das Rad nicht breiter */
 .wwheels .wlab { font: 600 11.5px/1 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-bottom: 2px;
   display: flex; justify-content: center; white-space: nowrap; }   /* passt sie nicht ganz, ragt sie gleichmäßig nach beiden Seiten */
@@ -1152,7 +1160,8 @@ function renderPlan(c) {
   // Angaben als vier Kacheln nebeneinander; im geführten Modus führt jede Kachel zurück zu ihrer Frage
   const wiz = ui.mode === "wiz", place = PLACES.find(p => p[1] === inp.T0);
   const tile = (st, lab, v, aria) => wiz ? `<button type="button" class="gv" data-s="${st}" aria-label="${aria}, ändern"><small>${lab}</small><b>${v}</b></button>` : `<div class="gv"><small>${lab}</small><b>${v}</b></div>`;
-  let top = `<div class="goal"><div class="gh">${wineName}${c.dec ? (inp.decMin ? ` · ${inp.decMin} min in der Karaffe` : " · aus der Karaffe") : ""}${wiz ? " · Werte antippen zum Ändern" : ""}</div><div class="g4">` +
+  let top = (wiz ? `<div class="rhead"><div class="prog">${'<i class="on"></i>'.repeat(STEPS)}<span>&nbsp;Fertig</span></div><h2 class="q">Dein Plan</h2></div>` : "") +
+    `<div class="goal"><div class="gh">${wineName}${c.dec ? (inp.decMin ? ` · ${inp.decMin} min in der Karaffe` : " · aus der Karaffe") : ""}${wiz ? " · Werte antippen zum Ändern" : ""}</div><div class="g4">` +
     tile(0, day === "morgen" ? "morgen<br>um" : "heute<br>um", hm(c.tServe), `Einschenken ${day} ${hm(c.tServe)}`) +
     tile(1, inp.inGlass ? "Wein<br>im Glas" : "Ziel", deg0(inp.target), `${inp.inGlass ? "Wein im Glas" : "Ziel"} ${degS(inp.target)}`) +
     tile(3, "Wein<br>jetzt", deg0(inp.T0), `Wein jetzt ${degS(inp.T0)}${place ? " (" + place[0] + ")" : ""}`) +
@@ -1704,8 +1713,8 @@ function renderWiz() {
     const day = () => { const td = targetDate(); $("wzDay").textContent = td.getDate() !== new Date().getDate() ? "Das ist morgen – heute ist die Uhrzeit schon vorbei." : ""; };
     const setT = (h, m) => { inp.ttime = tf2(h) + ":" + tf2(m); save(); day(); };
     const [h, m] = inp.ttime.split(":").map(Number);
-    const wh = makeWheel($("wz-h"), { key: "zh", label: "Stunde", loop: true, row: 42, min: 0, max: 23, step: 1, fmt: tf2, text: v => v + " Uhr", onChange: v => setT(v, +inp.ttime.split(":")[1]) });
-    const wm = makeWheel($("wz-m"), { key: "zm", label: "Minute", loop: true, row: 42, min: 0, max: 55, step: 5, fmt: tf2, text: v => v + " Minuten", onChange: v => setT(+inp.ttime.split(":")[0], v) });
+    const wh = makeWheel($("wz-h"), { key: "zh", label: "Stunde", loop: true, row: 39, min: 0, max: 23, step: 1, fmt: tf2, text: v => v + " Uhr", onChange: v => setT(v, +inp.ttime.split(":")[1]) });
+    const wm = makeWheel($("wz-m"), { key: "zm", label: "Minute", loop: true, row: 39, min: 0, max: 55, step: 5, fmt: tf2, text: v => v + " Minuten", onChange: v => setT(+inp.ttime.split(":")[0], v) });
     requestAnimationFrame(() => { wh.set(h); wm.set(Math.round(m / 5) * 5); }); day();
   } else if (st === 1) {
     el.querySelectorAll("[data-c]").forEach(b => b.onclick = () => {
@@ -1713,29 +1722,34 @@ function renderWiz() {
       if (inp.color !== k) { inp.color = k; if (!w || w[0] !== k) { inp.wine = ""; inp.target = colorTarget(k); } }
       save(); renderWiz(); $("wzQ").focus({ preventScroll: true }); });
     if (inp.color) {
-      const wt = makeWheel($("wz-t"), { key: "zt", label: "Wein im Glas", row: 42, min: 4, max: 24, step: 1, fmt: tf, text: tt,
+      const wt = makeWheel($("wz-t"), { key: "zt", label: "Wein im Glas", row: 39, min: 4, max: 24, step: 1, fmt: tf, text: tt,
         onChange: v => { inp.target = v; save(); $("wzAdv").innerHTML = tempAdvice(); } });   // Rebsorte bleibt: eigener Geschmack ist erlaubt
       $("wzWine").onchange = e => { const w = WINES.find(x => x[1] === e.target.value); inp.wine = e.target.value; if (w) { inp.target = Math.round((w[2] + w[3]) / 2); wt.set(inp.target, true); } if (inp.decant) decApplyRec(); save(); bd(); $("wzAdv").innerHTML = tempAdvice(); };
       requestAnimationFrame(() => wt.set(inp.target)); wineReel($("wzWine"));
-      const bd = () => { $("wzDec").innerHTML = decHtml(); bindDec($("wzDec"), bd); }; bindDec($("wzDec"), bd);
+      // Dekantieren angehakt: Oben ist alles beantwortet – zu den neuen Feldern und „Weiter“ scrollen (der Haken bleibt sichtbar)
+      let decWas = !!inp.decant;
+      const showDec = () => { const top = $("wzDec").getBoundingClientRect().top + scrollY, end = $("wzNext").getBoundingClientRect().bottom + scrollY;
+        const pad = parseFloat(getComputedStyle(document.querySelector(".wrap")).paddingBottom) || 16;   // enthält den Home-Balken
+        const y = Math.max(0, Math.min(top - 12, end + pad - innerHeight)); if (y > scrollY + 4) scrollTo({ top: y, behavior: REDUCED ? "auto" : "smooth" }); };
+      const bd = () => { $("wzDec").innerHTML = decHtml(); bindDec($("wzDec"), bd); if (inp.decant && !decWas) requestAnimationFrame(showDec); decWas = !!inp.decant; }; bindDec($("wzDec"), bd);
     }
   } else if (st === 2) {
-    const wa = makeWheel($("wz-a"), { key: "za", label: "Raumtemperatur", row: 42, min: 0, max: 35, step: 1, fmt: tf, text: tt, onChange: v => { inp.Tair = v; save(); } });
+    const wa = makeWheel($("wz-a"), { key: "za", label: "Raumtemperatur", row: 39, min: 0, max: 35, step: 1, fmt: tf, text: tt, onChange: v => { inp.Tair = v; save(); } });
     requestAnimationFrame(() => wa.set(inp.Tair));
   } else {
     const dir = () => { $("wzDir").textContent = wizDir(); };
     const mark = () => { el.querySelectorAll("#wzPlaces .choice[data-v]").forEach(b => b.setAttribute("aria-pressed", String(!wzExact && +b.dataset.v === inp.T0)));
       const x = $("wzExactBtn"); x.setAttribute("aria-pressed", String(wzExact)); x.querySelector("small").textContent = wzExact ? deg(inp.T0) : "mit dem Rad"; dir(); };
-    const w0 = makeWheel($("wz-0"), { key: "z0", label: "Wein jetzt", row: 42, min: -5, max: 30, step: 1, fmt: tf, text: tt, onChange: v => { inp.T0 = v; wzExact = true; save(); mark(); } });
+    const w0 = makeWheel($("wz-0"), { key: "z0", label: "Wein jetzt", row: 39, min: -5, max: 30, step: 1, fmt: tf, text: tt, onChange: v => { inp.T0 = v; wzExact = true; save(); mark(); } });
     // Ort antippen stellt das Rad; Drehen am Rad markiert „Genau einstellen“
     el.querySelectorAll("#wzPlaces .choice[data-v]").forEach(b => b.onclick = () => { wzExact = false; inp.T0 = +b.dataset.v; w0.set(inp.T0, true); save(); mark(); });
     $("wzExactBtn").onclick = () => { wzExact = true; save(); mark(); $("wh-z0").focus({ preventScroll: true }); };
     requestAnimationFrame(() => w0.set(inp.T0)); dir();
   }
   const finish = () => { ui.done = true; wizEdit = false; saveUi(); applyMode(); window.scrollTo({ top: 0 }); };
-  if ($("wzBack")) $("wzBack").onclick = () => { ui.step--; saveUi(); renderWiz(); $("wzQ").focus({ preventScroll: true }); };
+  if ($("wzBack")) $("wzBack").onclick = () => { ui.step--; saveUi(); renderWiz(); scrollTo({ top: 0 }); $("wzQ").focus({ preventScroll: true }); };
   if ($("wzRes")) $("wzRes").onclick = finish;
-  $("wzNext").onclick = () => { if (st === STEPS - 1) finish(); else { ui.step++; saveUi(); renderWiz(); $("wzQ").focus({ preventScroll: true }); } };
+  $("wzNext").onclick = () => { if (st === STEPS - 1) finish(); else { ui.step++; saveUi(); renderWiz(); scrollTo({ top: 0 }); $("wzQ").focus({ preventScroll: true }); } };
 }
 function renderSum() {
   const td = targetDate(), day = td.getDate() !== new Date().getDate() ? "morgen" : "heute";
@@ -1874,7 +1888,7 @@ header { position: relative; }
 .appver { text-decoration: underline dotted; text-underline-offset: 3px; }
 </style>
 <script>
-const APP_VERSION = '2.5';
+const APP_VERSION = '2.6';
 (() => {
   const updateEl = document.getElementById("update"), txt = document.getElementById("update-text"), go = document.getElementById("update-go");
   let ausTimer = null, infoTimer = null, checking = false, announced = null;
