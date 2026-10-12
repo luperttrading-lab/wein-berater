@@ -1,6 +1,6 @@
 <!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1A1113">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-6.png"><link rel="icon" href="icon-192-2-6.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-7.png"><link rel="icon" href="icon-192-2-7.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Temperatur">
 <style>body{margin:0}[hidden]{display:none!important}</style></head><body><script>{ let t = "dark"; try { t = localStorage.getItem("wtp.theme") || "dark"; } catch (_) {} document.documentElement.dataset.theme = t; }   // Standard dunkel, Wahl wird gemerkt</script>
 <title>Wein-Temperaturplaner</title>
@@ -205,7 +205,7 @@ button.primary:focus-visible { outline: 2px solid var(--text); outline-offset: 3
 @media (max-width: 340px) { .mode button { padding: 6px 6px; font-size: 11.5px; letter-spacing: -.01em; } }
 .mode button { min-height: 36px; padding: 6px 13px; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--muted); }
 .mode button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
-.wiz { gap: 10px; grid-template-columns: minmax(0, 1fr); }   /* knapp gehalten: Frage 2 passt so auch als App auf ein iPhone 12–15 */
+.wiz { gap: 8px; grid-template-columns: minmax(0, 1fr); }   /* knapp gehalten: Frage 2 passt so auch als App auf ein iPhone 12–15 */
 .toprow { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px; }
 .toprow .eyebrow { margin-bottom: 0; letter-spacing: .1em; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .hdtools { display: flex; align-items: center; gap: 12px; flex: none; }
@@ -248,6 +248,7 @@ body.wizrun .mode { margin-top: 8px; }
 .wiz .prog i, .rhead .prog i { width: 22px; height: 4px; border-radius: 2px; background: var(--line-strong); }
 .wiz .prog i.on, .rhead .prog i.on { background: var(--accent); }
 .wiz .q, .rhead .q { font: 600 21px/1.25 var(--f-display); margin: 0; text-wrap: balance; }
+.stack, .decRec.stack { display: grid; } .stack > * { grid-area: 1 / 1; } .stack > .ghost { visibility: hidden; }   /* Platzhalter für die längste Variante */
 .rhead { display: grid; gap: 10px; margin-bottom: 6px; }   /* Ergebnis nach Frage 4: gleiche Leiste, alles erledigt */
 .wiz .sub { text-wrap: balance; }
 .wiz .sub { margin: -6px 0 0; color: var(--muted); font-size: 13.5px; }
@@ -1297,10 +1298,18 @@ const decApplyRec = () => { const r = decRec(); if (r) inp.decMin = r.min; };
 const GUIDE = { Rot: { lo: 12, hi: 18, txt: "leichte Rotweine 12–14\u00a0°C, mittelkräftige 15–17\u00a0°C, kräftige 16–18\u00a0°C" },
   "Weiß": { lo: 8, hi: 13, txt: "leichte, frische Weißweine 8–10\u00a0°C, kräftige und im Barrique gereifte 11–13\u00a0°C" },
   "Rosé": { lo: 8, hi: 10, txt: "Rosé 8–10\u00a0°C" } };
+// Frage 2: Die Karte soll bei Rot, Weiß und Rosé gleich groß sein. Alle Varianten des Hinweises liegen unsichtbar
+// übereinander (auch mit „… wärmer als empfohlen“) – die Höhe richtet sich nach der längsten, bei jeder Breite und Schrift.
+const stackHtml = (cur, ghosts) => `<span>${cur}</span>` + ghosts.map(g => `<span class="ghost" aria-hidden="true">${g}</span>`).join("");
+function advStack() {
+  const keep = { color: inp.color, wine: inp.wine, target: inp.target }, ghosts = [];
+  try { for (const c of ["Rot", "Weiß", "Rosé"]) { inp.color = c; inp.wine = ""; inp.target = 99; ghosts.push(tempAdvice()); } } finally { Object.assign(inp, keep); }
+  return stackHtml(tempAdvice(), ghosts);
+}
 function tempAdvice() {
   const w = WINES.find(x => x[1] === inp.wine), g = GUIDE[inp.color]; if (!g) return "";
   const lo = w ? w[2] : g.lo, hi = w ? w[3] : g.hi, t = inp.target;
-  return (w ? `Empfohlen für ${w[1]}: <b class="nw">${lo}–${hi}\u00a0°C</b>` : `Empfohlen: ${g.txt.replace(/(\d+–\d+\u00a0°C)/g, '<span class="nw">$1</span>')}. Mit Rebsorte genauer.`) +
+  return (w ? `Empfohlen für ${w[1]}: <b class="nw">${lo}–${hi}\u00a0°C</b>` : `Empfohlen: ${g.txt.replace(/(\d+–\d+\u00a0°C)/g, '<span class="nw">$1</span>')}.`) +
     (t < lo ? ` <span class="off">${t}\u00a0°C ist kühler als empfohlen.</span>` : t > hi ? ` <span class="off">${t}\u00a0°C ist wärmer als empfohlen.</span>` : "");
 }
 // Rebsorten-Vorschau: Im leeren Auswahlfeld laufen nach 2,5 s einige Rebsorten mit ihrer Temperatur durch – man sieht,
@@ -1329,9 +1338,10 @@ function decHtml() {
   // Rotwein: Hauptzweck ist Luft (karaffieren) bzw. Bodensatz trennen (dekantieren). Weiß/Rosé: nur Servieren –
   // geschmacklich bringt es meist nichts, aber die Karaffe ändert die Temperatur, und das wird mitgerechnet.
   const red = inp.color === "Rot";
-  const why = (red ? "Junge, kräftige Rote bekommen in der Karaffe Luft, alte trennt man so vom Bodensatz."
+  const why = (red ? "Junge Rote bekommen in der Karaffe Luft, alte trennt man so vom Bodensatz."
     : "Geschmacklich bringt die Karaffe hier meist nichts.") + ` <span class="dw">Karaffe und Raum verändern die Temperatur – der Planer rechnet das ein.</span>`;
-  return `<label class="check"><input type="checkbox" class="decOn"${inp.decant ? " checked" : ""}>${red ? "Dekantieren" : "Aus der Karaffe servieren"}</label>` + (!inp.decant ? `<small class="decRec">${why}</small>` : "") +
+  const whyOther = (red ? "Geschmacklich bringt die Karaffe hier meist nichts." : "Junge Rote bekommen in der Karaffe Luft, alte trennt man so vom Bodensatz.") + ` <span class="dw">Karaffe und Raum verändern die Temperatur – der Planer rechnet das ein.</span>`;
+  return `<label class="check"><input type="checkbox" class="decOn"${inp.decant ? " checked" : ""}>${red ? "Dekantieren" : "Aus der Karaffe servieren"}</label>` + (!inp.decant ? `<small class="decRec stack">${stackHtml(why, [whyOther])}</small>` : "") +
     (inp.decant ? `<div class="grow"><span class="lbl">${red ? "Wie lange Luft vor dem Einschenken?" : "Wie lange in der Karaffe vor dem Einschenken?"}</span>
     <div class="chips decChips" role="group" aria-label="Zeit in der Karaffe">${DEC_TIMES.map(v => `<button type="button" data-v="${v}" aria-pressed="${+inp.decMin === v}">${v} min</button>`).join("")}</div>
     ${(r => r ? `<small class="decRec">Empfehlung${r.old ? "" : ` für ${inp.wine}`}: <b>${r.txt}</b> – ${r.why}.</small>` : inp.color === "Rot" ? `<small class="decRec">Mit Rebsorte gibt es eine Empfehlung für die Dauer.</small>` : "")(decRec())}
@@ -1696,7 +1706,7 @@ function renderWiz() {
   else if (st === 1) body = `<h2 class="q" id="wzQ" tabindex="-1">Welcher Wein?</h2>
     <div class="choices c3">${COLORS.map(([k, n, c]) => `<button type="button" class="choice" data-c="${k}" aria-pressed="${inp.color === k}"><span class="dot" style="background:${c}"></span>${n}</button>`).join("")}</div>
     ${inp.color ? `<select id="wzWine" aria-label="Rebsorte"><option value="">Rebsorte wählen (optional)</option>${WINES.filter(w => w[0] === inp.color).map(w => `<option value="${w[1]}"${w[1] === inp.wine ? " selected" : ""}>${w[1]} (${w[2]}–${w[3]} °C)</option>`).join("")}</select>
-    <p class="sub adv" id="wzAdv" style="margin:0">${tempAdvice()}</p>
+    <p class="sub adv stack" id="wzAdv" style="margin:0">${advStack()}</p>
     <div class="wwheels"><div class="wcol" id="wz-t"></div></div><div class="grow" id="wzDec">${decHtml()}</div>` : `<p class="sub" style="margin:0">Danach kannst du die Rebsorte wählen.</p>`}`;
   else if (st === 2) body = `<h2 class="q" id="wzQ" tabindex="-1">Wie warm ist es im Raum?</h2><p class="sub">Dort, wo eingeschenkt und getrunken wird.</p>
     <div class="wwheels"><div class="wcol" id="wz-a"></div></div>`;
@@ -1723,8 +1733,8 @@ function renderWiz() {
       save(); renderWiz(); $("wzQ").focus({ preventScroll: true }); });
     if (inp.color) {
       const wt = makeWheel($("wz-t"), { key: "zt", label: "Wein im Glas", row: 39, min: 4, max: 24, step: 1, fmt: tf, text: tt,
-        onChange: v => { inp.target = v; save(); $("wzAdv").innerHTML = tempAdvice(); } });   // Rebsorte bleibt: eigener Geschmack ist erlaubt
-      $("wzWine").onchange = e => { const w = WINES.find(x => x[1] === e.target.value); inp.wine = e.target.value; if (w) { inp.target = Math.round((w[2] + w[3]) / 2); wt.set(inp.target, true); } if (inp.decant) decApplyRec(); save(); bd(); $("wzAdv").innerHTML = tempAdvice(); };
+        onChange: v => { inp.target = v; save(); $("wzAdv").innerHTML = advStack(); } });   // Rebsorte bleibt: eigener Geschmack ist erlaubt
+      $("wzWine").onchange = e => { const w = WINES.find(x => x[1] === e.target.value); inp.wine = e.target.value; if (w) { inp.target = Math.round((w[2] + w[3]) / 2); wt.set(inp.target, true); } if (inp.decant) decApplyRec(); save(); bd(); $("wzAdv").innerHTML = advStack(); };
       requestAnimationFrame(() => wt.set(inp.target)); wineReel($("wzWine"));
       // Dekantieren angehakt: Oben ist alles beantwortet – zu den neuen Feldern und „Weiter“ scrollen (der Haken bleibt sichtbar)
       let decWas = !!inp.decant;
@@ -1888,7 +1898,7 @@ header { position: relative; }
 .appver { text-decoration: underline dotted; text-underline-offset: 3px; }
 </style>
 <script>
-const APP_VERSION = '2.6';
+const APP_VERSION = '2.7';
 (() => {
   const updateEl = document.getElementById("update"), txt = document.getElementById("update-text"), go = document.getElementById("update-go");
   let ausTimer = null, infoTimer = null, checking = false, announced = null;
