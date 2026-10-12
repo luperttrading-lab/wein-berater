@@ -1,6 +1,6 @@
 <!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1A1113">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-7.png"><link rel="icon" href="icon-192-2-7.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-8.png"><link rel="icon" href="icon-192-2-8.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Temperatur">
 <style>body{margin:0}[hidden]{display:none!important}</style></head><body><script>{ let t = "dark"; try { t = localStorage.getItem("wtp.theme") || "dark"; } catch (_) {} document.documentElement.dataset.theme = t; }   // Standard dunkel, Wahl wird gemerkt</script>
 <title>Wein-Temperaturplaner</title>
@@ -248,6 +248,11 @@ body.wizrun .mode { margin-top: 8px; }
 .wiz .prog i, .rhead .prog i { width: 22px; height: 4px; border-radius: 2px; background: var(--line-strong); }
 .wiz .prog i.on, .rhead .prog i.on { background: var(--accent); }
 .wiz .q, .rhead .q { font: 600 21px/1.25 var(--f-display); margin: 0; text-wrap: balance; }
+.dechead { display: flex; align-items: center; gap: 2px; } .dechead .check { flex: 0 1 auto; }
+.decInfoBtn { min-height: 0; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--accent); display: inline-grid; place-items: center; flex: none; }
+.decInfoBtn svg { width: 18px; height: 18px; } .decInfoBtn[aria-expanded="true"] { background: var(--accent-soft); }
+.decInfo { display: grid; gap: 6px; background: var(--accent-soft); border-radius: var(--radius-sm); padding: 9px 11px; font-size: 13px; line-height: 1.4; }
+.decInfo p { margin: 0; }
 .stack, .decRec.stack { display: grid; } .stack > * { grid-area: 1 / 1; } .stack > .ghost { visibility: hidden; }   /* Platzhalter für die längste Variante */
 .rhead { display: grid; gap: 10px; margin-bottom: 6px; }   /* Ergebnis nach Frage 4: gleiche Leiste, alles erledigt */
 .wiz .sub { text-wrap: balance; }
@@ -977,7 +982,7 @@ function compute() {
 }
 
 // ----------------------------------------------------------------- Ausgabe
-let heroDetOpen = false, optsOpen = false, methodsSig = "", chartPin = null, scrubbing = false;
+let decInfoOpen = false, heroDetOpen = false, optsOpen = false, methodsSig = "", chartPin = null, scrubbing = false;
 // Ablauf je Methode: erster Handgriff (Start) und letzter (Einschenken)
 // Im Glas wärmt der Wein weiter (Glas und Luft bei Raumtemperatur): Stand nach DRINK Sekunden
 const glassLater = () => { const s = serve(); return s ? inp.target + (s.end - s.mix) : null; };
@@ -1341,7 +1346,12 @@ function decHtml() {
   const why = (red ? "Junge Rote bekommen in der Karaffe Luft, alte trennt man so vom Bodensatz."
     : "Geschmacklich bringt die Karaffe hier meist nichts.") + ` <span class="dw">Karaffe und Raum verändern die Temperatur – der Planer rechnet das ein.</span>`;
   const whyOther = (red ? "Geschmacklich bringt die Karaffe hier meist nichts." : "Junge Rote bekommen in der Karaffe Luft, alte trennt man so vom Bodensatz.") + ` <span class="dw">Karaffe und Raum verändern die Temperatur – der Planer rechnet das ein.</span>`;
-  return `<label class="check"><input type="checkbox" class="decOn"${inp.decant ? " checked" : ""}>${red ? "Dekantieren" : "Aus der Karaffe servieren"}</label>` + (!inp.decant ? `<small class="decRec stack">${stackHtml(why, [whyOther])}</small>` : "") +
+  // Rotwein: beide Begriffe, Erklärung hinter dem „i“ (Kompendium-Vorspann „Dekantieren oder Karaffieren?“, eigene Worte)
+  const info = red ? `<button type="button" class="decInfoBtn" aria-expanded="${decInfoOpen}" aria-controls="decInfo" aria-label="Was heißt Dekantieren und Karaffieren?"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.8" r="1" fill="currentColor"/></svg></button>` : "";
+  const infoBox = red && decInfoOpen ? `<div class="decInfo" id="decInfo"><p><b>Karaffieren:</b> Jungen Wein kräftig in eine weite Karaffe gießen, damit er Luft bekommt. Die Tannine werden weicher, der Duft öffnet sich.</p>
+    <p><b>Dekantieren:</b> Alten Wein vorsichtig umfüllen, damit der Bodensatz in der Flasche bleibt – mit wenig Luft, danach bald trinken.</p>
+    <p>Im Alltag sagt man zu beidem „dekantieren“. Für den Planer ist es dasselbe: Er rechnet ein, wie warm oder kühl der Wein in der Karaffe wird.</p></div>` : "";
+  return `<div class="dechead"><label class="check"><input type="checkbox" class="decOn"${inp.decant ? " checked" : ""}>${red ? "Dekantieren / Karaffieren" : "Aus der Karaffe servieren"}</label>${info}</div>` + infoBox + (!inp.decant ? `<small class="decRec stack">${stackHtml(why, [whyOther])}</small>` : "") +
     (inp.decant ? `<div class="grow"><span class="lbl">${red ? "Wie lange Luft vor dem Einschenken?" : "Wie lange in der Karaffe vor dem Einschenken?"}</span>
     <div class="chips decChips" role="group" aria-label="Zeit in der Karaffe">${DEC_TIMES.map(v => `<button type="button" data-v="${v}" aria-pressed="${+inp.decMin === v}">${v} min</button>`).join("")}</div>
     ${(r => r ? `<small class="decRec">Empfehlung${r.old ? "" : ` für ${inp.wine}`}: <b>${r.txt}</b> – ${r.why}.</small>` : inp.color === "Rot" ? `<small class="decRec">Mit Rebsorte gibt es eine Empfehlung für die Dauer.</small>` : "")(decRec())}
@@ -1350,6 +1360,8 @@ function decHtml() {
     <small class="decRec">${inp.decCool ? "Gerechnet mit einer Karaffe von etwa 12 °C. Sie verändert den Wein beim Umfüllen kaum – so wird er auch bei langer Zeit in der Karaffe nicht zu warm." : "Eine zimmerwarme Karaffe wärmt kalten Wein beim Umfüllen sofort um einige Grad. Das ist eingerechnet."}</small></div>` : "");
 }
 function bindDec(host, after) {
+  const ib = host.querySelector(".decInfoBtn");
+  if (ib) ib.onclick = () => { decInfoOpen = !decInfoOpen; after(); const nb = host.querySelector(".decInfoBtn"), box = host.querySelector(".decInfo"); if (nb) nb.focus({ preventScroll: true }); if (box) box.scrollIntoView({ block: "nearest", behavior: REDUCED ? "auto" : "smooth" }); };
   host.querySelector(".decOn").onchange = e => { inp.decant = e.target.checked; if (inp.decant) { if (inp.color !== "Rot") { inp.decOld = false; inp.decMin = 0; } decApplyRec(); } save(); after(); };   // Weiß/Rosé: erst beim Einschenken umfüllen
   const o = host.querySelector(".decOld"); if (o) o.onchange = e => { inp.decOld = e.target.checked; decApplyRec(); save(); after(); };
   const k = host.querySelector(".decCool"); if (k) k.onchange = e => { inp.decCool = e.target.checked; save(); after(); };
@@ -1898,7 +1910,7 @@ header { position: relative; }
 .appver { text-decoration: underline dotted; text-underline-offset: 3px; }
 </style>
 <script>
-const APP_VERSION = '2.7';
+const APP_VERSION = '2.8';
 (() => {
   const updateEl = document.getElementById("update"), txt = document.getElementById("update-text"), go = document.getElementById("update-go");
   let ausTimer = null, infoTimer = null, checking = false, announced = null;
