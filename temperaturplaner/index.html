@@ -1,6 +1,6 @@
 <!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1A1113">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-10.png"><link rel="icon" href="icon-192-2-10.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon-2-11.png"><link rel="icon" href="icon-192-2-11.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Temperatur">
 <style>body{margin:0}[hidden]{display:none!important}</style></head><body><script>{ let t = "dark"; try { t = localStorage.getItem("wtp.theme") || "dark"; } catch (_) {} document.documentElement.dataset.theme = t; }   // Standard dunkel, Wahl wird gemerkt</script>
 <title>Wein-Temperaturplaner</title>
@@ -507,13 +507,13 @@ svg.chart * { pointer-events: none; }   /* Finger/Maus treffen immer die Grafik 
   <div id="optsHome" hidden><div class="optspanel" id="optsPanel"><span class="lbl" id="optsLbl">Einstellungen</span><div class="opts" id="opts"></div></div></div>
 
   <details class="sec" id="secChart" open>
-    <summary><span class="t">Verlauf als Grafik</span><span class="v">alle Methoden im Vergleich</span></summary>
+    <summary><span class="t">Verlauf als Grafik</span><span class="v" id="chartSub">alle Methoden im Vergleich</span></summary>
     <div class="in">
     <div class="tip" id="tip" aria-live="polite"></div>
     <div class="chart-wrap" id="chartWrap"><svg class="chart" id="chart" viewBox="0 0 680 260" role="img" aria-label="Temperaturverlauf der Methoden"></svg>
       </div>
     <div class="legend" id="legend"></div>
-    <p class="muted" id="chartNote" style="margin:0;font-size:12.5px">Dicke Linie: deine Methode. <span id="chartDash"></span><span id="chartWhite"></span> <span id="chartBand"></span></p>
+    <p class="muted" id="chartNote" style="margin:0;font-size:12.5px"><span id="chartThick">Dicke Linie: deine Methode. </span><span id="chartDash"></span><span id="chartWhite"></span> <span id="chartBand"></span></p>
   </div>
   </details>
 
@@ -1202,8 +1202,10 @@ function renderPlan(c) {
     tile(1, inp.inGlass ? "Wein<br>im Glas" : "Ziel", deg0(inp.target), `${inp.inGlass ? "Wein im Glas" : "Ziel"} ${degS(inp.target)}`) +
     tile(3, "Wein<br>jetzt", deg0(inp.T0), `Wein jetzt ${degS(inp.T0)}${place ? " (" + place[0] + ")" : ""}`) +
     tile(2, `<span class="lg">Raum\u00adtemperatur</span><span class="sm">Raum</span>`, deg0(inp.Tair), `Raumtemperatur ${degS(inp.Tair)}`) + `</div></div>`;
-  if (c.same) top += c.dec ? `<div class="what">Der Wein hat mit ${degS(inp.T0)} schon die richtige Temperatur. Um <strong>${hm(c.tDate)}</strong> in die Karaffe umfüllen${inp.decMin ? `, um ${hm(c.tServe)} einschenken` : " und einschenken"}.</div>`
-    : `<div class="what">Der Wein hat mit ${degS(inp.T0)} schon etwa die ${c.sv ? "Einschenktemperatur" : "Zieltemperatur"} von ${degS(c.Tm)}. Nichts zu tun.</div>`;
+  // Schon richtig: Das gilt nur, solange die Flasche bis zum Umfüllen bzw. Einschenken bleibt, wo sie ist
+  const wait = +c.tDate - +c.now > 5 * 60000, stay = `Bis <strong>${hm(c.tDate)}</strong> dort lassen, wo er jetzt ist, dann`;
+  if (c.same) top += c.dec ? `<div class="what">Der Wein hat mit ${degS(inp.T0)} schon die richtige Temperatur. ${wait ? `${stay} in die Karaffe umfüllen` : "Jetzt in die Karaffe umfüllen"}${inp.decMin ? `, um ${hm(c.tServe)} einschenken` : " und einschenken"}.</div>`
+    : `<div class="what">Der Wein hat mit ${degS(inp.T0)} schon etwa die ${c.sv ? "Einschenktemperatur" : "Zieltemperatur"} von ${degS(c.Tm)}. ${wait ? `${stay} einschenken` : "Gleich einschenken"}.</div>`;
   else if (!c.decBad) top += `<div class="dir">${dirText(c.Tm)}</div>`;
   if (c.decBad) top += `<div class="note warn"><strong>Zu lange in der Karaffe.</strong> Bei ${degS(inp.Tair)} Raumtemperatur wird der Wein in ${minTxt(inp.decMin * 60)} zu warm: Er müsste beim Umfüllen ${c.decBad.T <= -4.9 ? "unter −5 °C" : degS(c.decBad.T)} haben, so kalt geht nicht sinnvoll. ` +
     (c.decBad.fit !== null ? `<button type="button" class="decFix" data-v="${c.decBad.fit}">${c.decBad.fit ? `Nur ${c.decBad.fit} min in der Karaffe` : "Erst beim Einschenken umfüllen (0 min)"}</button>` : `Lieber aus der Flasche servieren.`) + `</div>`;
@@ -1471,18 +1473,23 @@ function bindChart(svg) {
 }
 function renderChart(c) {
   const svg = $("chart"), L = $("legend"), list = ORDER.map(k => c.res[k]).filter(r => r.valid);
+  // Wein hat schon die richtige Temperatur: keine Methode, aber Karaffe und Glas gibt es trotzdem zu sehen
+  const keep = !list.length && c.same && !!c.after;
   const W = Math.max(300, Math.round($("chartWrap").clientWidth || 680)), H = W < 520 ? 220 : 280;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  $("tip").hidden = !list.length; $("chartNote").hidden = !list.length;
-  if (!list.length) { svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">Keine Methode erreicht das Ziel.</text>`; L.innerHTML = ""; return; }
+  $("tip").hidden = $("chartNote").hidden = !list.length && !keep; $("chartThick").hidden = keep;
+  $("chartSub").textContent = keep ? (c.dec && inp.decMin ? "in der Karaffe und im Glas" : "im Glas") : "alle Methoden im Vergleich";
+  if (!list.length && !keep) { svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">${c.same ? "Nichts zu tun: Wein hat schon Zieltemperatur." : "Keine Methode erreicht das Ziel."}</text>`; L.innerHTML = ""; return; }
   // Zeitfenster aus den Methoden, nicht aus „jetzt“: Es reicht bis zum Start der gewählten Methode
   // (mindestens 45 min, höchstens so lang wie die langsamste Methode). Viel langsamere Methoden
   // laufen von links ins Bild. Rand links/rechts proportional, damit die Linien die Breite nutzen.
-  const sel = c.res[inp.method], Dsel = sel.valid ? sel.D : Math.min(...list.map(r => r.D));
-  const win = Math.min(Math.max(...list.map(r => r.D)), Math.max(2.5 * Dsel, 45 * 60)) * 1000;
-  const first0 = Math.min(...list.map(r => r.late ? +c.now : +r.start));   // früheste Linie (zu späte beginnen jetzt)
-  const tEnd0 = Math.max(c.tDate.getTime() + Math.max(8 * 60000, win * 0.15), c.tServe.getTime() + 8 * 60000);
-  const tMin = Math.max(c.tDate.getTime() - win * 1.08, first0 - 0.06 * (tEnd0 - first0)), tEnd = Math.max(c.tDate.getTime() + Math.max(8 * 60000, win * 0.15), c.tServe.getTime() + 8 * 60000);
+  // Ohne Methode: 45 min Flasche vor dem Umfüllen bzw. Einschenken, danach 15 min im Glas.
+  const sel = c.res[inp.method], Dsel = sel.valid ? sel.D : keep ? 0 : Math.min(...list.map(r => r.D));
+  const win = keep ? 45 * 60000 : Math.min(Math.max(...list.map(r => r.D)), Math.max(2.5 * Dsel, 45 * 60)) * 1000;
+  const first0 = keep ? +c.tDate - win : Math.min(...list.map(r => r.late ? +c.now : +r.start));   // früheste Linie (zu späte beginnen jetzt)
+  const tail = (keep ? 15 : 8) * 60000;
+  const tEnd0 = Math.max(c.tDate.getTime() + Math.max(8 * 60000, win * 0.15), c.tServe.getTime() + tail);
+  const tMin = Math.max(c.tDate.getTime() - win * 1.08, first0 - 0.06 * (tEnd0 - first0)), tEnd = tEnd0;
   const Tb = c.sv ? inp.target : c.dec ? c.dec.S : c.Tm, glassEnd = c.after ? c.after[c.after.length - 1][1] : Tb;
   const aV = c.after ? c.after.map(q => q[1]) : [];   // Karaffe/Glas nach dem Umfüllen mit einschließen
   const yMin = Math.min(c.up ? inp.T0 - 1 : Math.min(c.Tm, glassEnd) - 2, ...aV.map(v => v - 1), c.Tm - 1.2), yMax = Math.max(c.up ? Math.max(Tb, glassEnd) + 1.5 : inp.T0 + 1, ...aV.map(v => v + 1), Tb + 1.5, c.Tm + 1.2);
@@ -1525,6 +1532,10 @@ function renderChart(c) {
     s += `<path clip-path="url(#plot)" d="${pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join(" ")}" fill="none" stroke="var(--s-${r.key})" stroke-width="${sel ? 4 : r.late ? 1.5 : 2.5}"${r.late ? ` stroke-dasharray="${sel ? "9 7" : "5 5"}"` : ""} stroke-linejoin="round" stroke-linecap="${r.late ? "butt" : "round"}" opacity="${sel ? 1 : r.late ? .55 : .85}"/>`;
     if (st >= tMin) s += `<circle opacity="${r.late && !sel ? .55 : 1}" cx="${X(st)}" cy="${Y(inp.T0)}" r="${sel ? 5.5 : r.late ? 3 : 4}" fill="var(--s-${r.key})" stroke="var(--panel)" stroke-width="2"/>`;
   }
+  if (keep) {   // Flasche bleibt bis zum Umfüllen bzw. Einschenken, wo sie ist
+    const x0 = Math.max(tMin, +c.now);
+    if (x0 < +c.tDate) s += `<path clip-path="url(#plot)" d="M${X(x0).toFixed(1)} ${Y(inp.T0).toFixed(1)} L${X(c.tDate).toFixed(1)} ${Y(inp.T0).toFixed(1)}" fill="none" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>`;
+  }
   if (c.after) {   // Einschenken bzw. Umfüllen: Sprung, danach Karaffe und Glas
     const gp = [[+c.tDate, c.Tm], ...c.after.map(([t, v]) => [+c.tDate + t * 1000, v])].filter(p => p[0] <= tEnd);
     s += `<path clip-path="url(#plot)" d="${gp.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join(" ")}" fill="none" stroke="var(--text)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -1535,7 +1546,9 @@ function renderChart(c) {
   $("chartDash").textContent = list.some(r => r.late) ? "Gestrichelt: schafft es nicht pünktlich, ab jetzt gerechnet. " : "";
   $("chartBand").textContent = c.after ? `Helles Band: bis 1 Grad neben dem Ziel – bis zum ${c.dec ? "Umfüllen" : "Einschenken"} für die Flasche, danach ${c.sv ? "im Glas" : "in der Karaffe"}.` : "Helles Band: bis 1 Grad neben dem Ziel.";
   $("chartWhite").textContent = !c.after ? "" :`Helle Linie: der Wein ${c.dec && inp.decMin ? "in der Karaffe" + (c.sv ? " und im Glas" : "") : "im Glas"}${sel.late ? ", bei pünktlichem Start" : ""}.`;
-  L.innerHTML = list.slice().sort((a, b) => a.start - b.start).map(r => `<span${r.late && r.key !== inp.method ? ' class="late"' : ""}><i${r.late ? ' class="dash"' : ""} style="background-color:var(--s-${r.key});height:${r.key === inp.method ? 5 : r.late ? 2 : 3}px"></i>${r.key === inp.method ? "<b>" : ""}${METHODS[r.key].name}, ${r.late ? `ab jetzt (${lateWord(r)})` : `Start ${hm(r.start)}`}${r.key === inp.method ? "</b>" : ""}</span>`).join("")
+  const place = PLACES.find(p => p[1] === inp.T0);
+  L.innerHTML = (keep ? `<span><i style="background:var(--muted);height:3px"></i>Flasche bis ${hm(c.tDate)} bei ${degS(inp.T0)} lassen${place ? ` (${place[0]})` : ""}</span>` : "") +
+    list.slice().sort((a, b) => a.start - b.start).map(r => `<span${r.late && r.key !== inp.method ? ' class="late"' : ""}><i${r.late ? ' class="dash"' : ""} style="background-color:var(--s-${r.key});height:${r.key === inp.method ? 5 : r.late ? 2 : 3}px"></i>${r.key === inp.method ? "<b>" : ""}${METHODS[r.key].name}, ${r.late ? `ab jetzt (${lateWord(r)})` : `Start ${hm(r.start)}`}${r.key === inp.method ? "</b>" : ""}</span>`).join("")
     + (c.dec ? `<span><i style="background:var(--text);height:5px"></i>${inp.decMin ? "in der Karaffe, dann " : ""}${c.sv ? "im Glas" : "in der Karaffe"} (${degS(c.Tm)} → ${degS(c.sv ? inp.target : c.dec.S)})</span>`
       : c.sv ? `<span><i style="background:var(--text);height:5px"></i>im Glas nach dem Einschenken (${degS(c.Tm)} → ${degS(inp.target)})</span>` : "");
   const tip = $("tip"), cross = $("cross"), hit = $("hit");
@@ -1546,6 +1559,7 @@ function renderChart(c) {
     cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
     const poured = c.after && ms >= +c.tDate;
     const rows = list.filter(r => !poured || r.key === "glas").map(r => [r, valAt(r, ms)]).filter(p => p[1] !== null);
+    if (keep && !poured && ms >= +c.now) rows.push([{ key: "flasche", sw: "var(--muted)", label: "Flasche" }, inp.T0]);
     if (poured) { const tt = (ms - c.tDate) / 1000, gp = c.after; let v = gp[gp.length - 1][1];
       for (let i = 1; i < gp.length; i++) if (gp[i][0] >= tt) { v = gp[i - 1][1] + (gp[i][1] - gp[i - 1][1]) * (tt - gp[i - 1][0]) / (gp[i][0] - gp[i - 1][0]); break; }
       rows.push([{ key: "glas", sw: "var(--text)", label: c.dec && ms < +c.tServe ? "In der Karaffe" : "Im Glas" }, v]); }
@@ -1642,7 +1656,8 @@ function renderDock(c) {
   else if (tr && tr.late && !tr.reached) { t = hm(tr.outT); txt = `<b>${m.name} läuft</b>um ${hm(tr.outT)} ${tr.dec ? "umfüllen" : OUT.includes(tr.key) ? "herausnehmen" : "einschenken"} · etwa ${degS(tr.atTarget)}`; }
   else if (tr) { t = tr.eta ? hm(tr.eta) : "–"; txt = `<b>${m.name} läuft</b>${tr.reached ? (tr.dec ? "jetzt in die Karaffe umfüllen" : OUT.includes(tr.key) ? "jetzt herausnehmen" : "fertig") : tr.eta ? `${degS(tr.T)} in ${dur(tr.left)}${tr.dec ? ", dann umfüllen" : OUT.includes(tr.key) ? ", dann herausnehmen" : ""}` : "Ziel wird nicht erreicht"}`; }
   else if (c.decBad) txt = `<b>Zu lange in der Karaffe</b>Zeit in der Karaffe kürzer stellen`;
-  else if (c.same) txt = `<b>Wein hat schon Zieltemperatur</b>`;
+  else if (c.same) { t = +c.tDate - +c.now > 60000 ? hm(c.tDate) : "jetzt";
+    txt = `<b>Wein hat schon Zieltemperatur</b>${c.dec ? (inp.decMin ? `umfüllen, ${hm(c.tServe)} einschenken` : "umfüllen und einschenken") : "einschenken"}`; }
   else if (!r.valid) txt = `<b>${m.name} passt nicht</b>${r.why}`;
   else {
     const mins = (r.start - c.now) / 60000; t = hm(r.start);
@@ -1944,7 +1959,7 @@ header { position: relative; }
 .appver { text-decoration: underline dotted; text-underline-offset: 3px; }
 </style>
 <script>
-const APP_VERSION = '2.10';
+const APP_VERSION = '2.11';
 (() => {
   const updateEl = document.getElementById("update"), txt = document.getElementById("update-text"), go = document.getElementById("update-go");
   let ausTimer = null, infoTimer = null, checking = false, announced = null;
